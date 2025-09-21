@@ -9,7 +9,7 @@ export default function Login({ navigation }) {
 
   const handleLogin = () => {
     if (username === '' && password === '') {
-      navigation.replace('Dashboard');
+      navigation.replace('MainDrawer');
     } else {
       alert('Username หรือ Password ไม่ถูกต้อง');
     }

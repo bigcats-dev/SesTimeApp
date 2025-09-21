@@ -41,8 +41,7 @@ export default StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#121212', 
+    padding: 16, 
   },
   cardRow: {
     flexDirection: 'row',
