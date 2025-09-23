@@ -1,9 +1,9 @@
 import React from 'react';
-import { Image } from 'react-native';
+import { View, Image, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
-
+import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer'; 
+import { MaterialCommunityIcons } from '@expo/vector-icons';  
 
 import Login from './src/screens/Login';
 import Dashboard from './src/screens/Dashboard';
@@ -11,43 +11,74 @@ import CheckIn from './src/screens/CheckIn';
 import History from './src/screens/History';
 import Schedule from './src/screens/Schedule';
 import Leave from './src/screens/Leave';
+import HistoryDetail from './src/screens/HistoryDetail';
+import styles from './src/styles/style';
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
-
-// Custom Drawer Content
+ 
 function CustomDrawerContent(props) {
+  const { state, navigation } = props;
+  const activeRoute = state.routeNames[state.index];
+
+  const menuItems = [
+    { label: 'Dashboard', icon: 'view-dashboard', route: 'Dashboard', color: '#EB5757' },
+    { label: 'ลงเวลาเข้างาน', icon: 'qrcode-scan', route: 'CheckIn', color: '#EB5757' },
+    { label: 'ตารางการทำงาน', icon: 'calendar-month', route: 'Schedule', color: '#EB5757' },
+    { label: 'การลา', icon: 'briefcase-clock', route: 'Leave', color: '#EB5757' },
+    { label: 'ประวัติ', icon: 'history', route: 'History', color: '#EB5757' },
+    { label: 'โอที', icon: 'alarm', route: 'OT', alert: true, color: '#EB5757' },
+    { label: 'ออกจากระบบ', icon: 'logout', route: 'Login', replace: true, color: '#EB5757' },
+  ];
+
   return (
-    <DrawerContentScrollView {...props}>
-      <DrawerItem
-        label="Dashboard"
-        onPress={() => props.navigation.navigate('Dashboard')}
-      />
-      <DrawerItem
-        label="ลงเวลาเข้างาน"
-        onPress={() => props.navigation.navigate('CheckIn')}
-      />
-      <DrawerItem
-        label="ตารางการทำงาน"
-        onPress={() => props.navigation.navigate('Schedule')}
-      />
-      <DrawerItem
-        label="การลา"
-        onPress={() => props.navigation.navigate('Leave')}
-      />
-      <DrawerItem
-        label="โอที"
-        onPress={() => alert('ไปหน้าโอที (ยังไม่สร้าง)')}
-      />
-      <DrawerItem
-        label="ออกจากระบบ"
-        onPress={() => props.navigation.replace('Login')}
-      />
+    <DrawerContentScrollView style={styles.DrawerContent} {...props}>
+
+ 
+      <View style={{ alignItems: 'center', marginVertical: 20 }}>
+        <Image
+          source={require('./assets/icon.png')}  
+          style={{ width: 100, height: 100, resizeMode: 'contain', marginBottom: 10 }}
+        />
+        <Text style={{ color: '#EB5757', fontSize: 22, fontWeight: 'bold' }}>
+          ระบบลงเวลาพนักงาน
+        </Text>
+      </View>
+ 
+      {menuItems.map((item, index) => {
+        const isActive = activeRoute === item.route;
+        return (
+          <DrawerItem
+            key={index}
+            label={item.label}
+            icon={({ size }) => (
+              <MaterialCommunityIcons
+                name={item.icon}
+                size={size}
+                color={isActive ? item.color : '#ccc'}
+              />
+            )}
+            labelStyle={{
+              ...styles.DrawerItem,
+              color: isActive ? item.color : styles.DrawerItem.color,
+            }}
+            style={styles.DrawerItemContainer}
+            onPress={() => {
+              if (item.alert) {
+                alert('ไปหน้าโอที (ยังไม่สร้าง)');
+              } else if (item.replace) {
+                navigation.replace(item.route);
+              } else {
+                navigation.navigate(item.route);
+              }
+            }}
+          />
+        );
+      })}
     </DrawerContentScrollView>
   );
 }
-
-// Drawer Navigator
+ 
 function DrawerNavigator() {
   return (
     <Drawer.Navigator
@@ -59,10 +90,11 @@ function DrawerNavigator() {
       <Drawer.Screen name="Schedule" component={Schedule} />
       <Drawer.Screen name="Leave" component={Leave} />
       <Drawer.Screen name="History" component={History} />
+      <Drawer.Screen name="HistoryDetail" component={HistoryDetail} />
     </Drawer.Navigator>
   );
 }
-
+ 
 export default function App() {
   return (
     <NavigationContainer>

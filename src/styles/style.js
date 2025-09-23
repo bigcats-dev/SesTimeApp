@@ -1,6 +1,25 @@
 import { StyleSheet } from 'react-native'; 
 // #ef1b27
 export default StyleSheet.create({ 
+  //DrawerContent
+ 
+  DrawerContent: {
+    backgroundColor: '#1e1e1e',
+    flex: 1,
+    paddingLeft: 0
+  }, 
+  DrawerItemContainer: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+    paddingLeft: 0
+  },
+  DrawerItem:{ 
+    color: '#fff',
+    fontSize: 18, 
+    paddingVertical: 4, 
+    paddingLeft: 10
+  },
+ 
  
   //login
   containerLogin: {
@@ -19,15 +38,22 @@ export default StyleSheet.create({
   },
   inputLog: {
     width: '100%',
+    height: 60,
     marginBottom: 20,
     backgroundColor: '#2c2c2c',  
     color: '#fff',  
+    borderRadius: 8,
   },
   buttonLog: {
-    width: '100%',
-    paddingVertical: 10,
+    width: '100%', 
     backgroundColor: '#ff3b30',  
     borderRadius: 8,
+  },
+  labelStyleLog: {
+    color: '#fff', 
+    fontSize: 20,
+    paddingVertical: 10,
+    paddingVertical: 10,
   },
   // Dashboard
   appbar: {
@@ -69,5 +95,46 @@ export default StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
   },
+  // Checkin 
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  containerCheckin: {
+    width: 280,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+  },
+  textCheckin: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 12,
+    color: '#333',
+  },
+  textH1: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 12,
+    color: '#ff3b30', 
+    marginBottom: 10
+  },
+  buttonCheck: {
+    width: '80%', 
+    backgroundColor: '#ff3b30',  
+    borderRadius: 8,
+    margin: "auto"
+  },
+  labelStyleCheck: {
+    color: '#fff', 
+    fontSize: 20,
+    paddingVertical: 18,
+    paddingVertical: 18,
+  },
+
+
 });
 

@@ -53,9 +53,10 @@ export default function Login({ navigation }) {
         mode="contained"
         onPress={handleLogin}
         style={styles.buttonLog}
+        labelStyle={styles.labelStyleLog}
         contentStyle={{ paddingVertical: 8 }}
       >
-        Login
+        เข้าใช้งาน
       </Button>
     </KeyboardAvoidingView>
   );
