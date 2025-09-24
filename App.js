@@ -12,6 +12,8 @@ import History from './src/screens/History';
 import Schedule from './src/screens/Schedule';
 import Leave from './src/screens/Leave';
 import HistoryDetail from './src/screens/HistoryDetail';
+import LeaveForm from './src/screens/LeaveForm';
+import OverTime from './src/screens/OverTime';
 import styles from './src/styles/style';
 
 const Stack = createNativeStackNavigator();
@@ -27,7 +29,7 @@ function CustomDrawerContent(props) {
     { label: 'ตารางการทำงาน', icon: 'calendar-month', route: 'Schedule', color: '#EB5757' },
     { label: 'การลา', icon: 'briefcase-clock', route: 'Leave', color: '#EB5757' },
     { label: 'ประวัติ', icon: 'history', route: 'History', color: '#EB5757' },
-    { label: 'โอที', icon: 'alarm', route: 'OT', alert: true, color: '#EB5757' },
+    { label: 'โอที', icon: 'alarm', route: 'OverTime', color: '#EB5757' },
     { label: 'ออกจากระบบ', icon: 'logout', route: 'Login', replace: true, color: '#EB5757' },
   ];
 
@@ -44,7 +46,20 @@ function CustomDrawerContent(props) {
           ระบบลงเวลาพนักงาน
         </Text>
       </View>
- 
+      {/* ข้อมูลพนักงาน */}
+   
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Image
+          source={{ uri: 'https://i.pravatar.cc/150?img=12' }}
+          style={{ width: 60, height: 60, borderRadius: 30, marginRight: 16 }}
+        />
+        <View>
+          <Text style={{ fontSize: 18, fontWeight: 'bold', color:'white' }}>สมชาย ใจดี</Text>
+          <Text style={{ fontSize: 14, color: 'gray' }}>รหัสพนักงาน: SES00001</Text>
+          <Text style={{ fontSize: 14, color: 'gray' }}>ตำแหน่ง: พนักงานเซอร์เวย์</Text>
+        </View>
+      </View>
+  
       {menuItems.map((item, index) => {
         const isActive = activeRoute === item.route;
         return (
@@ -91,6 +106,8 @@ function DrawerNavigator() {
       <Drawer.Screen name="Leave" component={Leave} />
       <Drawer.Screen name="History" component={History} />
       <Drawer.Screen name="HistoryDetail" component={HistoryDetail} />
+      <Drawer.Screen name="LeaveForm" component={LeaveForm} />
+      <Drawer.Screen name="OverTime" component={OverTime} />
     </Drawer.Navigator>
   );
 }

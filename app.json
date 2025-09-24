@@ -20,13 +20,22 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.CAMERA"
+      ],
+      "package": "com.pimpae.SesTimeApp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-barcode-scanner"
-    ]
+    "plugins": [ 
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "0e1cffb8-b52f-48eb-80e0-801ca52d0a0e"
+      }
+    },
+    "owner": "pimpae"
   }
 }

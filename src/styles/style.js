@@ -51,10 +51,11 @@ export default StyleSheet.create({
   },
   labelStyleLog: {
     color: '#fff', 
-    fontSize: 20,
-    paddingVertical: 10,
-    paddingVertical: 10,
+    fontSize: 18,
+    paddingVertical: 6,
+    paddingHorizontal: 6,
   },
+
   // Dashboard
   appbar: {
     backgroundColor: '#1e1e1e', 
@@ -135,6 +136,80 @@ export default StyleSheet.create({
     paddingVertical: 18,
   },
 
+  
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#333',
+  },
+  tipCard: {
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    elevation: 2,
+  },
+  tipTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginBottom: 4,
+    color: '#333',
+  },
+  tipDesc: {
+    fontSize: 13,
+    color: '#666',
+  },
 
+  // Leave  
+ 
+  leaveCard: {
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    elevation: 2,
+    shadowColor: '#fff',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8, 
+    elevation: 6,
+  },
+  leaveType: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 6,
+    color: '#ff3b30',
+  },
+  leaveText: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 2,
+  },
+  bottomBar: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
+  },
+  addButton: {
+    borderRadius: 12,
+    backgroundColor: '#ef1b27',
+    paddingVertical: 6,
+  },
+  optleave:{ 
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#ef1b27',
+    backgroundColor: '#f0f5ff',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    flexDirection: 'row', 
+    marginBottom: 10,
+  },
+  inputleave: { 
+    marginBottom: 0,
+    backgroundColor: '#fff',  
+    color: '#fff',  
+    borderRadius: 8,
+  },
 });
 
