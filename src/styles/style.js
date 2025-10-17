@@ -1,56 +1,76 @@
-import { StyleSheet } from 'react-native'; 
+import { StyleSheet } from 'react-native';
 // #ef1b27
-export default StyleSheet.create({ 
+export default StyleSheet.create({
   //DrawerContent
- 
+
   DrawerContent: {
     backgroundColor: '#1e1e1e',
     flex: 1,
     paddingLeft: 0
-  }, 
+  },
   DrawerItemContainer: {
     borderBottomWidth: 1,
     borderBottomColor: '#333',
     paddingLeft: 0
   },
-  DrawerItem:{ 
+  DrawerItem: {
     color: '#fff',
-    fontSize: 18, 
-    paddingVertical: 4, 
+    fontSize: 18,
+    paddingVertical: 4,
     paddingLeft: 10
   },
- 
- 
+
+
   //login
   containerLogin: {
     flex: 1,
+    // justifyContent: 'center',
+    // alignItems: 'center',
+    // backgroundColor: '#ffffffff',  
+    // paddingHorizontal: 10,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 24,
+  },
+  logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#1e1e1e',  
-    paddingHorizontal: 32,
+    marginBottom: 30,
+  },
+  logo: {
+    width: 140,
+    height: 140,
+    borderRadius: 20,
+    backgroundColor: '#eee',
+    resizeMode: 'contain',
+  },
+  inputWrapper: {
+    marginBottom: 20,
   },
   titleLogin: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#ff3b30',  
+    color: '#ff3b30',
     marginBottom: 40,
     textAlign: 'center',
   },
   inputLog: {
-    width: '100%',
+    // width: '100%',
     height: 60,
-    marginBottom: 20,
-    backgroundColor: '#2c2c2c',  
-    color: '#fff',  
+    // marginBottom: 20,
+    backgroundColor: '#ffffffff',
+    color: '#ffffffff',
     borderRadius: 8,
   },
   buttonLog: {
-    width: '100%', 
-    backgroundColor: '#ff3b30',  
+    width: '100%',
+    backgroundColor: '#ff3b30',
     borderRadius: 8,
   },
   labelStyleLog: {
-    color: '#fff', 
+    color: '#fff',
     fontSize: 18,
     paddingVertical: 6,
     paddingHorizontal: 6,
@@ -58,7 +78,7 @@ export default StyleSheet.create({
 
   // Dashboard
   appbar: {
-    backgroundColor: '#1e1e1e', 
+    backgroundColor: '#1e1e1e',
   },
   profileImage: {
     width: 36,
@@ -68,7 +88,7 @@ export default StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: 16, 
+    padding: 16,
   },
   cardRow: {
     flexDirection: 'row',
@@ -120,23 +140,23 @@ export default StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginTop: 12,
-    color: '#ff3b30', 
+    color: '#ff3b30',
     marginBottom: 10
   },
   buttonCheck: {
-    width: '80%', 
-    backgroundColor: '#ff3b30',  
+    width: '80%',
+    backgroundColor: '#ff3b30',
     borderRadius: 8,
     margin: "auto"
   },
   labelStyleCheck: {
-    color: '#fff', 
+    color: '#fff',
     fontSize: 20,
     paddingVertical: 18,
     paddingVertical: 18,
   },
 
-  
+
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -161,7 +181,7 @@ export default StyleSheet.create({
   },
 
   // Leave  
- 
+
   leaveCard: {
     padding: 12,
     borderRadius: 12,
@@ -170,7 +190,7 @@ export default StyleSheet.create({
     shadowColor: '#fff',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
-    shadowRadius: 8, 
+    shadowRadius: 8,
     elevation: 6,
   },
   leaveType: {
@@ -195,20 +215,20 @@ export default StyleSheet.create({
     backgroundColor: '#ef1b27',
     paddingVertical: 6,
   },
-  optleave:{ 
+  optleave: {
     borderRadius: 6,
     borderWidth: 1,
     borderColor: '#ef1b27',
     backgroundColor: '#f0f5ff',
     paddingVertical: 6,
     paddingHorizontal: 12,
-    flexDirection: 'row', 
+    flexDirection: 'row',
     marginBottom: 10,
   },
-  inputleave: { 
+  inputleave: {
     marginBottom: 0,
-    backgroundColor: '#fff',  
-    color: '#fff',  
+    backgroundColor: '#fff',
+    color: '#fff',
     borderRadius: 8,
   },
 });

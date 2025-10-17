@@ -3,6 +3,7 @@ import { View, Image, FlatList, StyleSheet, SafeAreaView } from 'react-native';
 import { Text, Appbar, Card, Button } from 'react-native-paper';
 import styles from '../styles/style';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRoute } from '@react-navigation/native';
 
 const LEAVE_HISTORY = [
   {
@@ -36,6 +37,9 @@ const LEAVE_HISTORY = [
 ];
 
 export default function Leave({ navigation }) {
+  const route = useRoute();
+  const from = route.params?.from || 'drawer';
+  console.log('from', from)
   const renderItem = ({ item }) => (
     <Card style={styles.leaveCard}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -59,11 +63,19 @@ export default function Leave({ navigation }) {
     <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
       {/* Header */}
       <Appbar.Header style={styles.appbar}>
-        <Appbar.Action
-          icon="arrow-left"
-          color="#ff3b30"
-          onPress={() => navigation.goBack()}
-        />
+        {from === 'drawer' ? (
+          <Appbar.Action
+            icon="menu"
+            color="#ff3b30"
+            onPress={() => navigation.openDrawer()}
+          />
+        ) : (
+          <Appbar.Action
+            icon="arrow-left"
+            color="#ff3b30"
+            onPress={() => navigation.goBack()}
+          />
+        )}
         <Appbar.Content
           title="ประวัติการลา"
           titleStyle={{ textAlign: 'center', color: 'white' }}
@@ -77,7 +89,7 @@ export default function Leave({ navigation }) {
 
       {/* Content */}
       <View style={{ flex: 1 }}>
-  
+
         <View style={{ flex: 1, paddingHorizontal: 16, marginTop: 10 }}>
           <Text style={styles.sectionTitle}>รายการประวัติการลา</Text>
           <FlatList
@@ -104,4 +116,4 @@ export default function Leave({ navigation }) {
     </View>
   );
 }
- 
+

@@ -3,6 +3,10 @@ import { View, Image, Text, Modal, StyleSheet, FlatList, TouchableOpacity, Alert
 import { Appbar, Card, Button } from 'react-native-paper';
 import styles from '../styles/style';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import useCurrentLocation from '../hooks/useCurrentLocation';
+import * as LocalAuthentication from 'expo-local-authentication';
+import Loading from '../components/Loading';
+import { useRoute } from '@react-navigation/native';
 
 const TIPS = [
   {
@@ -33,11 +37,68 @@ const TIPS = [
 ];
 
 export default function CheckIn({ navigation }) {
+  const route = useRoute();
+  const { getLocation } = useCurrentLocation();
+  const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const from = route.params?.from || 'drawer';
+  const handleCheckIn = async () => {
+    try {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
 
-  const handleCheckIn = () => {
-    setModalVisible(true);
-    setTimeout(() => setModalVisible(false), 2000);
+      if (!hasHardware || !isEnrolled) {
+        throw new Error('ไม่พบอุปกรณ์หรือยังไม่ได้ตั้งค่าชีวภาพ\nกรุณาตั้งค่าลายนิ้วมือหรือใบหน้าในอุปกรณ์ของคุณ');
+      }
+
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'ยืนยันตัวตนด้วยลายนิ้วมือหรือใบหน้า',
+        fallbackLabel: 'ใช้รหัสผ่าน',
+        cancelLabel: 'ยกเลิก',
+      });
+
+      if (!result.success) {
+        throw new Error('ยืนยันตัวตนไม่สำเร็จ\nกรุณาลองใหม่อีกครั้ง');
+      }
+
+      setLoading(true);
+
+      const loc = await getLocation();
+      if (!loc) {
+        throw new Error('ไม่สามารถดึงตำแหน่งได้');
+      }
+
+      const payload = {
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+        timestamp: new Date().toISOString(),
+      };
+
+      // const response = await fetch('https://your-api-endpoint.com/checkin', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(payload),
+      // });
+
+      // if (!response.ok) {
+      //   throw new Error('ไม่สามารถส่งข้อมูลลงเวลาได้');
+      // }
+
+      // const data = await response.json();
+      // console.log('Check-in response:', data);
+      setModalVisible(true);
+      setTimeout(() => {
+        setModalVisible(false)
+      }, 1000);
+    } catch (error) {
+      console.error('Check-in Error:', error);
+      Alert.alert(
+        'เกิดข้อผิดพลาด',
+        error.message || 'เกิดข้อผิดพลาดไม่ทราบสาเหตุ'
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const onTipPress = (item) => {
@@ -67,11 +128,19 @@ export default function CheckIn({ navigation }) {
     <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
       {/* Header */}
       <Appbar.Header style={styles.appbar}>
-        <Appbar.Action
-          icon="menu"
-          color="#ff3b30"
-          onPress={() => navigation.openDrawer()}
-        />
+        {from === 'drawer' ? (
+          <Appbar.Action
+            icon="menu"
+            color="#ff3b30"
+            onPress={() => navigation.openDrawer()}
+          />
+        ) : (
+          <Appbar.Action
+            icon="arrow-left"
+            color="#ff3b30"
+            onPress={() => navigation.goBack()}
+          />
+        )}
         <Appbar.Content
           title="ลงเวลาเข้างาน"
           titleStyle={{ textAlign: 'center', color: 'white' }}
@@ -83,10 +152,7 @@ export default function CheckIn({ navigation }) {
         />
       </Appbar.Header>
 
- 
-
- 
-      <View style={{ flex: 1, paddingHorizontal: 16 , marginTop: 10}}>
+      <View style={{ flex: 1, paddingHorizontal: 16, marginTop: 10 }}>
         <Text style={styles.sectionTitle}>คำแนะนำก่อนการลงเวลาเข้างาน</Text>
         <FlatList
           data={TIPS}
@@ -94,10 +160,10 @@ export default function CheckIn({ navigation }) {
           renderItem={renderTip}
           ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
           contentContainerStyle={{ paddingBottom: 16 }}
-        /> 
+        />
       </View>
- 
-      <View style={{ alignItems: 'center', marginBottom: 20 }}>
+
+      <View style={{ alignItems: 'center', marginBottom: 40 }}>
         <Button
           mode="contained"
           style={styles.buttonCheck}
@@ -123,7 +189,7 @@ export default function CheckIn({ navigation }) {
         </Text>
       </View>
 
-    
+
       <Modal
         transparent
         visible={modalVisible}
@@ -133,12 +199,12 @@ export default function CheckIn({ navigation }) {
         <View style={styles.overlay}>
           <View style={styles.containerCheckin}>
             <MaterialCommunityIcons name="check-circle" size={60} color="#4caf50" />
-            <Text style={styles.textCheckin}>ลงเวลาเข้างานสำเร็จ!</Text>
+            <Text style={styles.textCheckin}>ลงเวลาเข้างานสำเร็จ</Text>
           </View>
         </View>
       </Modal>
+      <Loading visible={loading} />
     </View>
   );
 }
 
- 

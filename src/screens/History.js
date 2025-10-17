@@ -2,13 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Image, ScrollView } from 'react-native';
 import { Text, Appbar, Card, DataTable, Button, Menu } from 'react-native-paper';
 import styles from '../styles/style';
+import { useRoute } from '@react-navigation/native';
 
 export default function History({ navigation }) {
+  const route = useRoute();
   const [month, setMonth] = useState('กันยายน 2025');
   const [menuVisible, setMenuVisible] = useState(false);
 
   const scrollRef = useRef(null);  
-
   const historyData = Array.from({ length: 30 }, (_, i) => {
     const day = (i + 1).toString().padStart(2, '0');
     const shift = i % 2 === 0 ? 'เช้า' : 'บ่าย';
@@ -36,8 +37,6 @@ export default function History({ navigation }) {
         <Appbar.Content title="ประวัติการลงเวลาทำงาน" titleStyle={{ textAlign: 'center', color: "white" }} />
         <Appbar.Action icon="bell" color="#ff3b30" onPress={() => console.log("กดแจ้งเตือน")} />
       </Appbar.Header>
-
-     
       <View style={{ padding: 16, flexDirection: 'row', justifyContent: 'flex-start' }}>
         <Menu
           visible={menuVisible}

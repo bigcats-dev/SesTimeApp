@@ -3,6 +3,7 @@ import { View, FlatList, TouchableOpacity, Image, Dimensions } from 'react-nativ
 import { Text, Appbar, Card } from 'react-native-paper';
 import styles from '../styles/style';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRoute } from '@react-navigation/native';
 
 const screenHeight = Dimensions.get('window').height;
 
@@ -26,9 +27,9 @@ for (let i = 1; i <= 30; i++) {
 }
 
 export default function WorkSchedule({ navigation }) {
+  const route = useRoute();
   const flatListRef = useRef();
-
-  // focus วันที่ปัจจุบัน
+  const from = route.params?.from || 'drawer';
   useEffect(() => {
     const todayIndex = today.getDate() - 1;
     setTimeout(() => {
@@ -37,7 +38,7 @@ export default function WorkSchedule({ navigation }) {
   }, []);
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => navigation.navigate('ScheduleDetail', { item })}>
+    <TouchableOpacity>
       <Card
         style={{
           marginBottom: 12,
@@ -68,11 +69,19 @@ export default function WorkSchedule({ navigation }) {
     <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
       {/* Header */}
       <Appbar.Header style={styles.appbar}>
-        <Appbar.Action
-          icon="arrow-left"
-          color="#ff3b30"
-          onPress={() => navigation.goBack()}
-        />
+        {from === 'drawer' ? (
+          <Appbar.Action
+            icon="menu"
+            color="#ff3b30"
+            onPress={() => navigation.openDrawer()}
+          />
+        ) : (
+          <Appbar.Action
+            icon="arrow-left"
+            color="#ff3b30"
+            onPress={() => navigation.goBack()}
+          />
+        )}
         <Appbar.Content
           title="ตารางการทำงาน"
           titleStyle={{ textAlign: 'center', color: 'white' }}
@@ -85,12 +94,12 @@ export default function WorkSchedule({ navigation }) {
       </Appbar.Header>
 
       {/* ข้อมูลพนักงาน */}
-       
+
 
       {/* ตารางเวลา */}
       <FlatList
         ref={flatListRef}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 , marginTop: 20}}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16, marginTop: 20 }}
         data={WORK_SCHEDULE}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
