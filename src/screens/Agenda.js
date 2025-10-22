@@ -4,83 +4,78 @@ import { Appbar } from 'react-native-paper';
 import AgendaList from '../components/AgendaList';
 import styles from '../styles/style';
 import { useRoute } from '@react-navigation/native';
-import { generateWorkDays } from '../mocks/agendaItem';
-
-async function fetchWorkDays(year, month) {
-  // mockup API
-  const data = {
-    workDays: generateWorkDays(year, month),
-    leaveDays: ["2025-10-15"],
-    holidays: []
-  };
-  return data;
-}
+import { useLazyGetScheduleQuery } from '../services/schedule';
+import AppHeader from '../components/AppHeader';
 
 export default function AgendaScreen({ navigation }) {
   const [items, setItems] = useState({ items: [], markedDates: [] });
   const route = useRoute();
   const from = route.params?.from || 'drawer';
+  const [fetchSchedule, { isFetching }] = useLazyGetScheduleQuery()
 
-  const generateMarkedDates = async (year, month) => {
+  const generateMarkedDates = async (workDaysData, year, month) => {
     try {
-      const { workDays, leaveDays } = await fetchWorkDays(year, month);
       const daysInMonth = new Date(year, month, 0).getDate();
       const newMarkedDates = {};
+      const updatedWorkDays = workDaysData.map(day => ({ ...day }));
       for (let d = 1; d <= daysInMonth; d++) {
         const dayStr = `${year}-${month.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
-        const isWorkDay = workDays.some(d => d.title == dayStr);
-        const isLeaveDay = leaveDays.includes(dayStr);
+        const isWorkDay = workDaysData.some(d => d.title == dayStr);
+        const isLeaveDay = workDaysData.some(d => d.title == dayStr && d.is_leave === true);
         newMarkedDates[dayStr] = {
           marked: isWorkDay,
           dotColor: isLeaveDay ? 'red' : 'blue',
         };
         if (isLeaveDay) {
-          const i = workDays.findIndex(d => d.title == dayStr);
-          workDays[i] = { title: workDays[i].title, data: [{ isLeaveDay }] }
+          const i = updatedWorkDays.findIndex(d => d.title == dayStr);
+          const grouped = updatedWorkDays[i]?.leave_detail?.reduce((acc, curr) => {
+            if (!acc.date) {
+              acc.date = curr.date;
+              acc.leave_type = curr.leave_type;
+              acc.reason = curr.reason;
+              acc.shift = [];
+              acc.isLeaveDay = isLeaveDay;
+            }
+            acc.shift.push({ start_time: curr.start_time, end_time: curr.end_time });
+            return acc;
+          }, {});
+          updatedWorkDays[i] = {
+            title: updatedWorkDays[i].title,
+            data: [grouped]
+          }
         }
       }
-      setItems({ items: workDays, markedDates: newMarkedDates })
+      setItems({ items: updatedWorkDays, markedDates: newMarkedDates })
     } catch (error) {
       console.error("Error fetching work days:", error);
     }
   }
   useEffect(() => {
     const today = new Date();
-    generateMarkedDates(today.getFullYear(), today.getMonth() + 1);
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1;
+    const loadData = async () => {
+      try {
+        const result = await fetchSchedule().unwrap();
+        generateMarkedDates(result, year, month);
+      } catch (error) {
+        console.error('error', error);
+      }
+    };
+    loadData();
   }, []);
 
-  const onMonthChange = useCallback(({ dateString }) => {
-    console.log('ExpandableCalendarScreen onMonthChange: ', dateString);
+  const onMonthChange = useCallback(async ({ dateString }) => {
     const [year, month] = dateString.split('-').map(Number);
-    generateMarkedDates(year, month);
-  }, []);
+    const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
+    const endDate = `${year}-${month.toString().padStart(2, '0')}-${new Date(year, month, 0).getDate()}`;
+    const result = await fetchSchedule({ startDate, endDate }).unwrap();
+    generateMarkedDates(result, year, month);
+  }, [fetchSchedule]);
   return (
     <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
       {/* Header */}
-      <Appbar.Header style={styles.appbar}>
-        {from === 'drawer' ? (
-          <Appbar.Action
-            icon="menu"
-            color="#ff3b30"
-            onPress={() => navigation.openDrawer()}
-          />
-        ) : (
-          <Appbar.Action
-            icon="arrow-left"
-            color="#ff3b30"
-            onPress={() => navigation.goBack()}
-          />
-        )}
-        <Appbar.Content
-          title="ตารางการทำงาน"
-          titleStyle={{ textAlign: 'center', color: 'white' }}
-        />
-        <Appbar.Action
-          icon="bell"
-          color="#ff3b30"
-          onPress={() => console.log('กดแจ้งเตือน')}
-        />
-      </Appbar.Header>
+      <AppHeader title="ตารางการทำงาน" />
       <AgendaList
         items={items.items}
         markedDates={items.markedDates}

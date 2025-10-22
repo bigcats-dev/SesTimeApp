@@ -15,23 +15,8 @@ import { isEmptyString } from '../utils';
 import Error from '../components/Error';
 import { useAuthStorage } from '../hooks/useAuthStorage';
 import { getDeviceId } from '../hooks/useDeviceId';
-
-const mockUser = {
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE3NjA0MDg3MjUsImp0aSI6IjE3NjA0MDg3MjU2OGVkYjQ5NWIzNDc0IiwibmJmIjoxNzYwNDA4NzM1LCJleHAiOjE3NjA0MTIzMzUsImRhdGEiOnsidXNlcklkIjoiMjY0IiwidXNlck5hbWUiOiJ0ZXN0In19.457yulLsHYk6M_T74IWH-wUTdUi9p1AIyPmcq3KXKCw",
-  "data": {
-    "userid": "264",
-    "user_code": "EMP0001",
-    "username": "test",
-    "first_name": "นายตรีภพ",
-    "last_name": "แก้วสีทา",
-    "position": "พนักงานรับแจ้ง",
-    "my_location": {
-      "latitude": "15.2843305000",
-      "longitude": "101.5771914000",
-      "datetime": "2025-10-07 17:14:16"
-    }
-  }
-};
+import { useDispatch, useSelector } from 'react-redux';
+import { loading, loginUser } from '../services/authSlice';
 
 const inputsConfig = [
   { name: 'username', label: 'ชื่อผู้ใช้งาน (Username)' },
@@ -39,7 +24,8 @@ const inputsConfig = [
 ];
 
 export default function Login({ navigation }) {
-  const { saveUser } = useAuthStorage()
+  const dispatch = useDispatch();
+  const isLoading = useSelector(loading)
   const [form, setForm] = useState({ username: '', password: '' });
   const [errors, setErrors] = useState({ username: '', password: '' });
 
@@ -68,11 +54,16 @@ export default function Login({ navigation }) {
     setErrors(newErrors);
 
     if (Object.values(newErrors).every((err) => isEmptyString(err))) {
-      // ✅ logic login
-      console.log('Login success:', form);
       const deviceId = await getDeviceId();
-      await saveUser({ ...mockUser, data: { ...mockUser.data, deviceId } })
-      navigation.replace('MainDrawer')
+      try {
+        const payload = { ...form, deviceId };
+        const result = await dispatch(loginUser(payload)).unwrap();
+        console.log('✅ login success:', result);
+        navigation.replace('MainDrawer');
+      } catch (err) {
+        console.log('❌ login failed:', err);
+        Alert.alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+      }
     }
   };
 
@@ -119,8 +110,11 @@ export default function Login({ navigation }) {
             style={styles.buttonLog}
             labelStyle={styles.labelStyleLog}
             contentStyle={{ paddingVertical: 8 }}
+            disabled={isLoading}
           >
-            เข้าใช้งาน
+            <Text style={{ color: '#fff' }}>
+              {isLoading ? 'กรุณารอซักครู่...' : 'เข้าใช้งาน'}
+            </Text>
           </Button>
         </ScrollView>
       </TouchableWithoutFeedback>

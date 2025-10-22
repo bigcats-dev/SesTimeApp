@@ -14,11 +14,11 @@ export default function CustomMenu({ anchorText, items, onSelect }) {
           justifyContent: 'space-between',
           alignItems: 'center',
           borderWidth: 1,
-          borderColor: '#6200ee', 
+          borderColor: '#7d7d7dff', 
           paddingVertical: 10,
           paddingHorizontal: 16,
-          borderRadius: 4,
-          backgroundColor: 'transparent',
+          borderRadius: 20,
+          backgroundColor: '#ece6efff',
         }}
       >
         <Text style={{ fontSize: 16 }}>{anchorText}</Text>

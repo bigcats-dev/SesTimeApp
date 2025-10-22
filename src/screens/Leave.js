@@ -1,112 +1,130 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Image, FlatList, StyleSheet, SafeAreaView } from 'react-native';
-import { Text, Appbar, Card, Button } from 'react-native-paper';
+import { Text, Appbar, Card, Button, ActivityIndicator } from 'react-native-paper';
 import styles from '../styles/style';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRoute } from '@react-navigation/native';
-
-const LEAVE_HISTORY = [
-  {
-    id: '1',
-    type: 'ลาป่วย',
-    date: '12 ก.ย. 2025',
-    days: '2 วัน',
-    reason: 'ป่วยเป็นไข้',
-  },
-  {
-    id: '2',
-    type: 'ลากิจ',
-    date: '5 ก.ย. 2025',
-    days: '1 วัน',
-    reason: 'ไปทำธุระที่บ้าน',
-  },
-  {
-    id: '3',
-    type: 'ลาพักร้อน',
-    date: '20 ส.ค. 2025',
-    days: '3 วัน',
-    reason: 'ไปเที่ยวกับครอบครัว',
-  },
-  {
-    id: '4',
-    type: 'ลาป่วย',
-    date: '10 ส.ค. 2025',
-    days: '1 วัน',
-    reason: 'ปวดหัว ไมเกรน',
-  },
-];
+import { useDeleteLeaveMutation, useGetLeavesQuery } from '../services/leave';
+import { default as LeaveCardSkeleton } from './../components/skeletions/Leave'
+import EmptyList from '../components/EmptyList';
+import AppHeader from '../components/AppHeader';
+import StatusLeave from '../components/StatusLeave';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function Leave({ navigation }) {
-  const route = useRoute();
-  const from = route.params?.from || 'drawer';
-  console.log('from', from)
-  const renderItem = ({ item }) => (
-    <Card style={styles.leaveCard}>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <MaterialCommunityIcons
-          name="calendar-check"
-          size={28}
-          color="#0072ff"
-          style={{ marginRight: 12 }}
-        />
-        <View style={{ flex: 1 }}>
-          <Text style={styles.leaveType}>{item.type}</Text>
-          <Text style={styles.leaveText}>📅 วันที่ลา: {item.date}</Text>
-          <Text style={styles.leaveText}>⏳ จำนวนวันลา: {item.days}</Text>
-          <Text style={styles.leaveText}>📝 เหตุผล: {item.reason}</Text>
+  const [page, setPage] = useState(1);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [id, setId] = useState(null);
+  const { data, isLoading, isFetching } = useGetLeavesQuery({ page, limit: 50 })
+  const [deleteLeave, { isLoading: isDeleting }] = useDeleteLeaveMutation()
+
+  const handleLoadMore = () => {
+    const isLastPage = data.meta.current_page === data.meta.last_page;
+    if (!isFetching && !isLastPage) {
+      setPage((prev) => prev + 1);
+    }
+  };
+
+  const onDismiss = useCallback(() => {
+    setDialogVisible(false)
+  }, [])
+
+  const handleConfirmDelete = useCallback(async () => {
+    setDialogVisible(false)
+    deleteLeave(id).then((json) => console.log('delete leave successfulty.', JSON.stringify(json)))
+  }, [id])
+
+  const renderItem = ({ item }) => {
+    const grouped = item.data?.reduce((acc, item) => {
+      if (!acc[item.date]) {
+        acc[item.date] = [];
+      }
+      acc[item.date].push(item);
+      return acc;
+    }, {});
+    return (
+      <Card
+        style={styles.leaveCard}
+        onPress={() => {
+          if (item.status === 'pending') {
+            setId(item.id)
+            setDialogVisible(true)
+          }
+        }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <MaterialCommunityIcons
+            name="calendar-check"
+            size={28}
+            color="#0072ff"
+            style={{ marginRight: 12 }}
+          />
+          <View style={{ flex: 1 }}>
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <Text style={styles.leaveType}>{item.leave_status}</Text>
+              <StatusLeave status={item.status} />
+            </View>
+            <Text style={styles.leaveText}>⏳ จำนวนวันลา: {Object.keys(grouped).length} วัน</Text>
+            <Text style={styles.leaveText}>📝 เหตุผล: {item.reason}</Text>
+            <View>
+              {Object.entries(grouped).map(([date, items]) => (
+                <View key={date}>
+                  <Text style={styles.leaveText}>📅 วันที่ลา {date}</Text>
+                  {items.map(item => (
+                    <Text key={item.id} style={[styles.leaveText, {
+                      marginHorizontal: 20
+                    }
+                    ]}>{item.start_time} - {item.end_time}</Text>
+                  ))}
+                </View>
+              ))}
+            </View>
+          </View>
         </View>
-      </View>
-    </Card>
-  );
+      </Card>
+    )
+  };
+
 
   return (
     <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
       {/* Header */}
-      <Appbar.Header style={styles.appbar}>
-        {from === 'drawer' ? (
-          <Appbar.Action
-            icon="menu"
-            color="#ff3b30"
-            onPress={() => navigation.openDrawer()}
-          />
-        ) : (
-          <Appbar.Action
-            icon="arrow-left"
-            color="#ff3b30"
-            onPress={() => navigation.goBack()}
-          />
-        )}
-        <Appbar.Content
-          title="ประวัติการลา"
-          titleStyle={{ textAlign: 'center', color: 'white' }}
-        />
-        <Appbar.Action
-          icon="bell"
-          color="#ff3b30"
-          onPress={() => console.log('กดแจ้งเตือน')}
-        />
-      </Appbar.Header>
-
+      <AppHeader title="ประวัติการลา" />
       {/* Content */}
       <View style={{ flex: 1 }}>
-
         <View style={{ flex: 1, paddingHorizontal: 16, marginTop: 10 }}>
           <Text style={styles.sectionTitle}>รายการประวัติการลา</Text>
-          <FlatList
-            data={LEAVE_HISTORY}
+          {isLoading ? (
+            [...Array(10)].map((_, i) => <LeaveCardSkeleton key={i} />)
+          ) : (<FlatList
+            data={data?.data}
             keyExtractor={(i) => i.id}
             renderItem={renderItem}
-            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-            contentContainerStyle={{ paddingBottom: 80 }} // กันไม่ให้ทับปุ่ม
-          />
+            ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+            contentContainerStyle={{ paddingBottom: 80 }}
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={isFetching ? <ActivityIndicator /> : null}
+            ListEmptyComponent={
+              <EmptyList icon="calendar-remove-outline" message="ไม่มีรายการลาของคุณ" />}
+          />)}
         </View>
       </View>
-
+      <ConfirmDialog
+        visible={dialogVisible}
+        onDismiss={onDismiss}
+        onConfirm={handleConfirmDelete}
+        title="ยกเลิกรายการ"
+        message="คุณต้องการยกเลิกรายการการลานี้หรือไม่?"
+      />
       {/* ปุ่มสร้างการลา */}
       <View style={styles.bottomBar}>
         <Button
           mode="contained"
-          onPress={() => navigation.navigate('LeaveForm')}
+          onPress={() => navigation.navigate('LeaveForm', { from: 'stack' })}
           style={styles.addButton}
           labelStyle={{ fontSize: 16, fontWeight: 'bold' }}
         >

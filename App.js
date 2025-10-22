@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { PaperProvider } from 'react-native-paper';
+import { Provider, useDispatch } from 'react-redux'
 
 
 import Login from './src/screens/Login';
@@ -19,7 +20,10 @@ import OverTime from './src/screens/OverTime';
 import Agenda from './src/screens/Agenda';
 import styles from './src/styles/style';
 import { useAuthStorage } from './src/hooks/useAuthStorage';
-import {LocaleConfig} from 'react-native-calendars';
+import { LocaleConfig } from 'react-native-calendars';
+import { store } from './store';
+import SplashScreen from './src/screens/SplashScreen';
+import { logoutUser } from './src/services/authSlice';
 
 LocaleConfig.locales['th'] = {
   monthNames: [
@@ -30,8 +34,8 @@ LocaleConfig.locales['th'] = {
     'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
     'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
   ],
-  dayNames: ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'],
-  dayNamesShort: ['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'],
+  dayNames: ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัส', 'ศุกร์', 'เสาร์'],
+  dayNamesShort: ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'],
   today: 'วันนี้'
 };
 
@@ -41,6 +45,7 @@ const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 
 function CustomDrawerContent(props) {
+  const dispatch = useDispatch();
   const { state, navigation } = props;
   const { loading: loadingUser, user } = useAuthStorage();
   const activeRoute = state.routeNames[state.index];
@@ -102,9 +107,14 @@ function CustomDrawerContent(props) {
                 color: isActive ? item.color : styles.DrawerItem.color,
               }}
               style={styles.DrawerItemContainer}
-              onPress={() => {
-                if (item.alert) {
-                  alert('ไปหน้าโอที (ยังไม่สร้าง)');
+              onPress={async () => {
+                if (item.route === 'Login') {
+                  try {
+                    await dispatch(logoutUser()).unwrap();
+                    navigation.replace(item.route);
+                  } catch (err) {
+                    Alert.alert('Logout ไม่สำเร็จ', err?.message || 'กรุณาลองใหม่อีกครั้ง');
+                  }
                 } else if (item.replace) {
                   navigation.replace(item.route);
                 } else {
@@ -175,13 +185,16 @@ function DrawerNavigator() {
 
 export default function App() {
   return (
-    <PaperProvider>
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Login" component={Login} />
-          <Stack.Screen name="MainDrawer" component={DrawerNavigator} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </PaperProvider>
+    <Provider store={store}>
+      <PaperProvider>
+        <NavigationContainer>
+          <Stack.Navigator initialRouteName='Splash' screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="Splash" component={SplashScreen} />
+            <Stack.Screen name="Login" component={Login} />
+            <Stack.Screen name="MainDrawer" component={DrawerNavigator} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </PaperProvider>
+    </Provider>
   );
 }

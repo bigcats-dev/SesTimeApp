@@ -5,15 +5,6 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const AgendaItem = (props) => {
   const { item, leaveState, toggleShift } = props;
-
-  const buttonPressed = useCallback(() => {
-    Alert.alert('Show me more');
-  }, []);
-
-  const itemPressed = useCallback(() => {
-    Alert.alert(item.title);
-  }, [item]);
-
   if (isEmpty(item)) {
     return (
       <View style={styles.emptyItem}>
@@ -21,7 +12,6 @@ const AgendaItem = (props) => {
       </View>
     );
   }
-
   return (
     <TouchableOpacity style={styles.item}>
       <MaterialCommunityIcons
@@ -34,8 +24,16 @@ const AgendaItem = (props) => {
         {item.isLeaveDay
           ? (
             <View>
-              <Text style={{ color: 'red' }}>ลากิจ</Text>
+              <Text style={{ color: 'red' }}>📅 {item.leave_type}</Text>
               <Text style={styles.leaveText}>📝 เหตุผล: {item.reason}</Text>
+              <View>
+                {item.shift?.map((shift, i) => (
+                  <Text key={`shift_${i}`} style={[styles.leaveText, {
+                    marginHorizontal: 20
+                  }
+                  ]}>{shift.start_time} - {shift.end_time}</Text>
+                ))}
+              </View>
             </View>
           )
           : (
@@ -92,5 +90,10 @@ const styles = StyleSheet.create({
   emptyItemText: {
     color: 'lightgrey',
     fontSize: 14
+  },
+  leaveText: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 2,
   }
 });
