@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 const scheduleApi = createApi({
   reducerPath: 'scheduleApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.API_URL || 'http://192.168.1.100:10601/api',
+    baseUrl: process.env.API_URL || 'http://192.168.1.44:10601/api',
     prepareHeaders: (headers, { getState }) => {
       // attach auth token if present in state
       const token = getState().auth?.token;
@@ -21,9 +21,9 @@ const scheduleApi = createApi({
         return `/employees/timework?${params.toString()}`;
       },
       providesTags: (result) =>
-        result
+        result?.data && Array.isArray(result.data)
           ? [
-            ...result.map(({ title }) => ({ type: 'Schedule', id: title })),
+            ...result.data?.map(({ title }) => ({ type: 'Schedule', id: title })),
             { type: 'Schedule', id: 'LIST' },
           ]
           : [{ type: 'Schedule', id: 'LIST' }],

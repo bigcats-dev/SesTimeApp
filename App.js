@@ -24,6 +24,9 @@ import { LocaleConfig } from 'react-native-calendars';
 import { store } from './store';
 import SplashScreen from './src/screens/SplashScreen';
 import { logoutUser } from './src/services/authSlice';
+import QrScannerScreen from './src/screens/QRScanner';
+import OverTimeAgenda from './src/screens/OverTimeAgenda';
+import OverTimeForm from './src/screens/OverTimeForm';
 
 LocaleConfig.locales['th'] = {
   monthNames: [
@@ -52,11 +55,11 @@ function CustomDrawerContent(props) {
 
   const menuItems = [
     { label: 'Dashboard', icon: 'view-dashboard', route: 'Dashboard', color: '#EB5757' },
-    { label: 'ลงเวลาเข้างาน', icon: 'qrcode-scan', route: 'CheckIn', color: '#EB5757' },
+    { label: 'ลงเวลาเข้างาน', icon: 'qrcode-scan', route: 'CheckInStack',nested: { screen: 'CheckIn' }, color: '#EB5757' },
     { label: 'ตารางการทำงาน', icon: 'calendar-month', route: 'Agenda', color: '#EB5757' },
     { label: 'การลา', icon: 'briefcase-clock', route: 'LeaveStack', nested: { screen: 'Leave' }, color: '#EB5757' },
-    { label: 'ประวัติ', icon: 'history', route: 'HistoryStack', color: '#EB5757' },
-    { label: 'โอที', icon: 'alarm', route: 'OverTime', color: '#EB5757' },
+    { label: 'ประวัติการเข้างาน', icon: 'history', route: 'HistoryStack', color: '#EB5757' },
+    { label: 'ประวัติการขอ OT', icon: 'alarm', route: 'OverTimeStack',nested: { screen: 'OverTime' }, color: '#EB5757' },
     { label: 'ออกจากระบบ', icon: 'logout', route: 'Login', replace: true, color: '#EB5757' },
   ];
 
@@ -148,6 +151,23 @@ function LeaveStack({ route }) {
   );
 }
 
+function CheckInStack() {
+  return (
+    <Stack.Navigator initialRouteName='CheckIn'>
+      <Drawer.Screen 
+        name="CheckIn" 
+        component={CheckIn} 
+        options={{ headerShown: false }} />
+     
+      <Stack.Screen
+        name="QRScanner"
+        component={QrScannerScreen}
+        options={{ headerShown: false }}
+      />
+    </Stack.Navigator>
+  );
+}
+
 function HistoryStack() {
   return (
     <Stack.Navigator initialRouteName='History'>
@@ -165,6 +185,29 @@ function HistoryStack() {
   );
 }
 
+function OvertTimeStack({ route }) {
+  return (
+    <Stack.Navigator initialRouteName='OverTime'>
+      <Stack.Screen
+        name="OverTime"
+        component={OverTime}
+        options={{ headerShown: false }}
+        initialParams={{ from: route.params?.from || 'drawer' }}
+      />
+      <Stack.Screen
+        name="OverTimeAgenda"
+        component={OverTimeAgenda}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="OverTimeForm"
+        component={OverTimeForm}
+        options={{ headerShown: false }}
+      />
+    </Stack.Navigator>
+  );
+}
+
 
 function DrawerNavigator() {
   return (
@@ -173,12 +216,12 @@ function DrawerNavigator() {
       drawerContent={(props) => <CustomDrawerContent {...props} />}
     >
       <Drawer.Screen name="Dashboard" component={Dashboard} />
-      <Drawer.Screen name="CheckIn" component={CheckIn} />
+      <Drawer.Screen name="CheckInStack" component={CheckInStack} />
       <Drawer.Screen name="Schedule" component={Schedule} />
       <Drawer.Screen name="Agenda" component={Agenda} />
       <Drawer.Screen name="LeaveStack" component={LeaveStack} />
       <Drawer.Screen name="HistoryStack" component={HistoryStack} />
-      <Drawer.Screen name="OverTime" component={OverTime} />
+      <Drawer.Screen name="OverTimeStack" component={OvertTimeStack} />
     </Drawer.Navigator>
   );
 }

@@ -4,5 +4,6 @@
  * @returns {boolean} true = ว่าง, false = มีค่า
  */
 export function isEmptyString(str) {
-    return !str || str.trim().length === 0;
+  if (str === null || str === undefined) return true;
+  return String(str).trim().length === 0;
 }

@@ -4,7 +4,7 @@ import { generateWorkDays } from '../mocks/agendaItem';
 import { Image } from 'react-native';
 import { useLazyGetScheduleQuery } from '../services/schedule';
 
-export default function WorkCalendar({ onDayPress, startDate, endDate , minDate}) {
+export default function WorkCalendar({ onDayPress, startDate, endDate, minDate }) {
   const [markedDates, setMarkedDates] = useState({});
   const [fetchSchedule, { isFetching }] = useLazyGetScheduleQuery()
 
@@ -71,7 +71,41 @@ export default function WorkCalendar({ onDayPress, startDate, endDate , minDate}
       }
     };
     loadData();
-  }, [startDate, endDate, minDate]);
+  }, []);
+
+  useEffect(() => {
+    const newMarkedDates = { ...markedDates };
+    if (Object.keys(newMarkedDates).length > 0 && startDate) {
+      Object.keys(newMarkedDates).forEach(d => {
+        newMarkedDates[d] = { ...newMarkedDates[d] };
+        delete newMarkedDates[d].startingDay;
+        delete newMarkedDates[d].endingDay;
+        delete newMarkedDates[d].color;
+        if (!newMarkedDates[d].disabled)
+          newMarkedDates[d].textColor = '#000';
+      });
+      const start = new Date(startDate);
+      const end = endDate ? new Date(endDate) : start;
+      let current = new Date(start);
+
+      while (current <= end) {
+        const d = current.toISOString().split('T')[0];
+        const isStart = d === startDate;
+        const isEnd = d === (endDate || startDate);
+
+        newMarkedDates[d] = {
+          ...(newMarkedDates[d] || {}),
+          startingDay: isStart,
+          endingDay: isEnd,
+          color: '#ff7f50',
+          textColor: '#fff'
+        };
+
+        current.setDate(current.getDate() + 1);
+      }
+    }
+    setMarkedDates(newMarkedDates);
+  }, [startDate, endDate]);
 
   const onMonthChange = useCallback(async (value) => {
     const [year, month] = [value.year, value.month]

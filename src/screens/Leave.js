@@ -11,6 +11,7 @@ import AppHeader from '../components/AppHeader';
 import StatusLeave from '../components/StatusLeave';
 import ConfirmDialog from '../components/ConfirmDialog';
 
+
 export default function Leave({ navigation }) {
   const [page, setPage] = useState(1);
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -46,7 +47,7 @@ export default function Leave({ navigation }) {
       <Card
         style={styles.leaveCard}
         onPress={() => {
-          if (item.status === 'pending') {
+          if (item.status === 'PENDING') {
             setId(item.id)
             setDialogVisible(true)
           }

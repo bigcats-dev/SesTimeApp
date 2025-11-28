@@ -23,13 +23,14 @@ const CHEVRON = require('../img/next.png');
 export default function CustomAgendaListExample({
   items,
   markedDates,
-  onMonthChange
+  onMonthChange,
+  onAgendaItemPress = () => {}
 }) {
   const [ready, setReady] = useState(false);
   const firstDate = items.length > 0 ? items[0].title : new Date().toISOString().split('T')[0];
-  const renderItem = useCallback(({ item }) => {
-    return <AgendaItem item={item} />;
-  }, []);
+  const renderItem = useCallback(({ item, section }) => {
+    return <AgendaItem onAgendaItemPress={onAgendaItemPress} section={section} item={item} />;
+  }, [onAgendaItemPress]);
 
   const calendarRef = useRef(null);
   const rotation = useRef(new Animated.Value(0));

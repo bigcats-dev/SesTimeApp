@@ -165,7 +165,7 @@ export default StyleSheet.create({
   },
   tipCard: {
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 4,
     backgroundColor: '#fff',
     elevation: 2,
   },
