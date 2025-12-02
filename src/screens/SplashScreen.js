@@ -3,6 +3,8 @@ import { View, Text, ActivityIndicator, StyleSheet } from 'react-native'
 import { useAuthStorage } from '../hooks/useAuthStorage'
 import { useDispatch } from 'react-redux'
 import { setUser } from './../services/authSlice'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { setTime } from '../services/timestamp'
 
 export default function SplashScreen({ navigation }) {
   const { getUser } = useAuthStorage()
@@ -11,6 +13,7 @@ export default function SplashScreen({ navigation }) {
   useEffect(() => {
     const bootstrap = async () => {
       try {
+        // check user login
         const user = await getUser()
         if (user) {
           dispatch(setUser(user))

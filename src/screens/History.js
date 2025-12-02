@@ -1,92 +1,146 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { View, Image, ScrollView } from 'react-native';
-import { Text, Appbar, Card, DataTable, Button, Menu } from 'react-native-paper';
+import { Text, Appbar, Card, DataTable, Button, Menu, ActivityIndicator } from 'react-native-paper';
 import styles from '../styles/style';
 import { useRoute } from '@react-navigation/native';
+import { useGetTimeStampHistoryQuery, useLazyGetTimeStampHistoryQuery } from '../services/schedule';
+import { generateThaiMonths, getCurrentDatetime, toDateThai } from '../utils';
+import AppHeader from '../components/AppHeader';
+import CustomMenu from '../components/CustomMenu';
 
-export default function History({ navigation }) {
-  const route = useRoute();
-  const [month, setMonth] = useState('กันยายน 2025');
-  const [menuVisible, setMenuVisible] = useState(false);
-
-  const scrollRef = useRef(null);  
-  const historyData = Array.from({ length: 30 }, (_, i) => {
-    const day = (i + 1).toString().padStart(2, '0');
-    const shift = i % 2 === 0 ? 'เช้า' : 'บ่าย';
-    const checkIn = shift === 'เช้า' ? '08:00' : '13:00';
-    const checkOut = shift === 'เช้า' ? '17:00' : '22:00';
-    return { date: `${day}/09/2025`, shift, checkIn, checkOut };
-  });
- 
-  const today = new Date();
-  const todayStr = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth()+1).toString().padStart(2,'0')}/2025`;
-  const todayIndex = historyData.findIndex(item => item.date === todayStr);
+export default function History({ navigation, route }) {
+  const refreshKey = route?.params?.refresh;
+  const currentDate = getCurrentDatetime();
+  const [month, setMonth] = useState(currentDate.month);
+  const { data: historyData, isLoading, refetch } = useGetTimeStampHistoryQuery(
+    { month },
+    { skip: !month }
+  );
+  const scrollRef = useRef(null);
+  const todayStr = currentDate.date;
+  const todayIndex = historyData?.days?.findIndex(item => item.date === todayStr);
 
   useEffect(() => {
-    if (scrollRef.current && todayIndex >= 0) { 
+    if (scrollRef.current && todayIndex >= 0) {
       scrollRef.current.scrollTo({ y: todayIndex * 48, animated: true });
     }
   }, [todayIndex]);
 
-  const summary = { late: 1, sick: 1, leave: 1 };
+  useEffect(() => {
+    if (refreshKey) {
+      refetch();
+    }
+  }, [refreshKey]);
+
+  const months = useMemo(() => generateThaiMonths(), [])
+
+  const onMonthChange = useCallback(({ id }) => {
+    setMonth(id)
+  }, [])
+
+  const summary = historyData?.summary;
 
   return (
-    <View style={{ flex: 1 }}>
-      <Appbar.Header style={styles.appbar}>
-        <Appbar.Action icon="arrow-left" color="#ff3b30"    onPress={() => navigation.goBack()} />
-        <Appbar.Content title="ประวัติการลงเวลาทำงาน" titleStyle={{ textAlign: 'center', color: "white" }} />
-        <Appbar.Action icon="bell" color="#ff3b30" onPress={() => console.log("กดแจ้งเตือน")} />
-      </Appbar.Header>
+    <View style={{ flex: 1, backgroundColor: '#FFF' }}>
+      <AppHeader title={'ประวัติการลงเวลา'} />
       <View style={{ padding: 16, flexDirection: 'row', justifyContent: 'flex-start' }}>
-        <Menu
-          visible={menuVisible}
-          onDismiss={() => setMenuVisible(false)}
-          anchor={
-            <Button mode="outlined" style={{color:'#000'}} labelStyle={{color:'#ff3b30'}} onPress={() => setMenuVisible(true)}>
-              {month}
-            </Button>
-          }
-        >
-          <Menu.Item onPress={() => { setMonth('สิงหาคม 2025'); setMenuVisible(false); }} title="สิงหาคม 2025" />
-          <Menu.Item onPress={() => { setMonth('กันยายน 2025'); setMenuVisible(false); }} title="กันยายน 2025" />
-          <Menu.Item onPress={() => { setMonth('ตุลาคม 2025'); setMenuVisible(false); }} title="ตุลาคม 2025" />
-        </Menu>
+        <CustomMenu
+          anchorText={`เดือน ${months[parseInt(month - 1)]?.name}`}
+          items={months}
+          onSelect={onMonthChange} />
       </View>
+      {isLoading && <ActivityIndicator />}
+      {historyData && Array.isArray(historyData.days) && (
+        <>
+          <ScrollView ref={scrollRef} style={{ paddingHorizontal: 16 }}>
+            <DataTable>
+              <DataTable.Header>
+                <DataTable.Title textStyle={{ fontWeight: 'bold', fontSize: 16 }}>วันที่</DataTable.Title>
+                <DataTable.Title textStyle={{ fontWeight: 'bold', fontSize: 16, textAlign: 'center', width: '100%' }}>
+                  เวลาเข้า
+                </DataTable.Title>
+                <DataTable.Title textStyle={{ fontWeight: 'bold', fontSize: 16, textAlign: 'center', width: '100%' }}>
+                  เวลาออก
+                </DataTable.Title>
+              </DataTable.Header>
 
-      <ScrollView ref={scrollRef} style={{ paddingHorizontal: 16 }}>
-        <DataTable>
-          <DataTable.Header>
-            <DataTable.Title>วันที่</DataTable.Title>
-            <DataTable.Title>เวร</DataTable.Title>
-            <DataTable.Title>เวลาเข้า</DataTable.Title>
-            <DataTable.Title>เวลาออก</DataTable.Title>
-          </DataTable.Header>
+              {historyData.days.map(({ date, schedules, leave }, index) => {
+                const isToday = date === todayStr;
+                return (
+                  <View key={index}>
+                    <DataTable.Row
+                      onPress={() => navigation.navigate('HistoryDetail', { record: date })}
+                      style={{ backgroundColor: isToday ? '#fbd5d5ff' : '#fcf6f6ff' }}
+                    >
+                      <DataTable.Cell collapsable={1}>
+                        {toDateThai(date)}
+                      </DataTable.Cell>
+                      <DataTable.Cell>
+                        {leave && (
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ color: 'red' }}>📅 {leave.type}</Text>
+                            <View>
+                              {leave.details?.map((shift, i) => (
+                                <Text key={`shift_${i}`} style={[styles.leaveText, {
+                                  marginHorizontal: 20
+                                }
+                                ]}>{shift.start_time} - {shift.end_time}</Text>
+                              ))}
+                            </View>
+                          </View>
+                        )}
+                      </DataTable.Cell>
+                    </DataTable.Row>
+                    {schedules?.map(({ id, start_time, end_time, timestamp }) => {
+                      const isLeave = leave?.details?.some(l => l.time_work_id == id && l.duation === 'FULL')
+                      return (
+                        <DataTable.Row key={`${date}_${start_time}`}>
+                          <DataTable.Cell>
+                            <Text style={{ marginHorizontal: 10 }}>{start_time} - {end_time}</Text>
+                          </DataTable.Cell>
+                          {isLeave
+                            ? (
+                              <>
+                                <DataTable.Cell style={{backgroundColor: '#eea5a5ff'}} collapsable={2}>
+                                  <Text style={{textAlign: 'center', color: '#000'}}>ลาเต็มวัน</Text>
+                                </DataTable.Cell>
+                              </>
+                            )
+                            : (
+                              <>
+                                <DataTable.Cell textStyle={{ textAlign: 'center' }}>
+                                  <Text style={{ textAlign: 'center', width: '100%', color: timestamp?.keeping_status?.id == 1 ? 'green' : (timestamp?.keeping_status?.id == 3 ? 'red' : '') }}>
+                                    {timestamp?.time_in ?? '-'}
+                                  </Text>
+                                </DataTable.Cell>
+                                <DataTable.Cell>
+                                  <Text style={{ textAlign: 'center', width: '100%' }}>{timestamp?.time_out ?? '-'}</Text>
+                                </DataTable.Cell>
+                              </>
+                            )}
 
-          {historyData.map((item, index) => {
-            const isToday = item.date === todayStr;
-            return (
-              <DataTable.Row
-                key={index}
-                onPress={() => navigation.navigate('HistoryDetail', { record: item })}
-                style={{ backgroundColor: isToday ? '#ffe6e6' : 'transparent' }}
-              >
-                <DataTable.Cell>{item.date}</DataTable.Cell>
-                <DataTable.Cell>{item.shift}</DataTable.Cell>
-                <DataTable.Cell>{item.checkIn}</DataTable.Cell>
-                <DataTable.Cell>{item.checkOut}</DataTable.Cell>
-              </DataTable.Row>
-            );
-          })}
-        </DataTable> 
-      </ScrollView>
-
-      <Card style={{ marginBottom: 16, borderRadius: 16, padding: 16 , marginLeft: 16 , marginRight: 16 }}>
-        <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>สรุปประจำเดือน</Text>
-        <Text>สาย: {summary.late} วัน</Text>
-        <Text>ป่วย: {summary.sick} วัน</Text>
-        <Text>ลา: {summary.leave} วัน</Text>
-      </Card>
-      
+                        </DataTable.Row>
+                      );
+                    })}
+                  </View>
+                );
+              })}
+            </DataTable>
+          </ScrollView>
+          <Card style={{ marginBottom: 16, borderRadius: 16, padding: 16, marginLeft: 16, marginRight: 16 }}>
+            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>สรุปประจำเดือน</Text>
+            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>
+              สาย: <Text style={{ color: 'red' }}>{summary?.lates}</Text> วัน
+            </Text>
+            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>
+              ขาด: <Text style={{ color: 'red' }}>{summary?.absent}</Text> วัน
+            </Text>
+            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>
+              ลา: <Text style={{ color: 'red' }}>{summary.leaves}</Text> วัน
+            </Text>
+          </Card>
+        </>
+      )}
     </View>
   );
 }

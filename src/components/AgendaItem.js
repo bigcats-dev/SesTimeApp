@@ -33,16 +33,13 @@ const AgendaItem = (props) => {
         {item.isLeaveDay
           ? (
             <View>
-              <Text style={{ color: 'red' }}>📅 {item.leave_type}</Text>
-              <Text style={styles.leaveText}>📝 เหตุผล: {item.reason}</Text>
-              <View>
-                {item.shift?.map((shift, i) => (
-                  <Text key={`shift_${i}`} style={[styles.leaveText, {
-                    marginHorizontal: 20
-                  }
-                  ]}>{shift.start_time} - {shift.end_time}</Text>
-                ))}
-              </View>
+              <Text style={{ color: 'red' }}>📅 {item.leave?.leave_type}</Text>
+              <Text style={styles.leaveText}>📝 {item.leave?.start_time} - {item.leave?.end_time}</Text>
+              {/* <View>
+                <Text style={[styles.leaveText, { marginHorizontal: 20 }]}>
+                  {item.leave?.start_time} - {item.leave?.end_time}
+                </Text>
+              </View> */}
             </View>
           )
           : (
@@ -66,7 +63,7 @@ const AgendaItem = (props) => {
                   <Text style={{ fontSize: 14, color: '#555' }}>
                     หมายเหตุ: {ot.note || '-'}
                   </Text>
-                  <StatusLeave status={ot.status}/>
+                  <StatusLeave status={ot.status} />
                 </View>
               )}
             </View>)}

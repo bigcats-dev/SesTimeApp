@@ -8,7 +8,7 @@ import { useAuthStorage } from '../hooks/useAuthStorage';
 export default function Dashboard({ navigation }) {
   const { loading: loadingUser, user } = useAuthStorage();
   const menus = React.useMemo(() => [
-    { title: 'ลงเวลาเข้างาน', icon: 'qrcode-scan', color: '#EB5757', navigate: 'CheckInStack', nested: { screen: 'CheckIn' } },
+    { title: 'ลงเวลาเข้า-ออกงาน', icon: 'qrcode-scan', color: '#EB5757', navigate: 'CheckInStack', nested: { screen: 'CheckIn' } },
     { title: 'ตารางการทำงาน', icon: 'calendar-month', color: '#5b86e5', navigate: 'Agenda' },
     { title: 'การลา', icon: 'briefcase-clock', color: '#0072ff', navigate: 'LeaveStack', nested: { screen: 'Leave' } },
     { title: 'ประวัติ', icon: 'history', color: '#f7971e', navigate: 'HistoryStack', nested: { screen: 'History' } },

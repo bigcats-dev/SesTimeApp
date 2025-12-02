@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Text, View, StyleSheet, Modal } from "react-native";
+import { Text, View, StyleSheet, Modal, Alert } from "react-native";
 import { Button } from 'react-native-paper';
 import { CameraView, useCameraPermissions } from "expo-camera";
 import useCurrentLocation from "../hooks/useCurrentLocation";
@@ -7,13 +7,19 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { CommonActions } from '@react-navigation/native';
 import Loading from "../components/Loading";
 import { getCurrentDatetime } from "../utils";
+import { useTimestampMutation } from "../services/schedule";
+import { useDispatch } from "react-redux";
+import { setTime } from "../services/timestamp";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function QrScannerScreen({ navigation, route: { params: { time_work_id, check_type, remark } } }) {
+export default function QrScannerScreen({ navigation, route: { params: { time_work_id, check_type, remark, work_date } } }) {
+  const dispatch = useDispatch();
   const { getLocation } = useCurrentLocation();
   const [loading, setLoading] = useState(false);
   const [scanned, setScanned] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
+  const [createTimeStamp, { isLoading }] = useTimestampMutation()
 
   if (!permission) {
     // Camera permissions are still loading.
@@ -38,50 +44,47 @@ export default function QrScannerScreen({ navigation, route: { params: { time_wo
       if (!loc) {
         throw new Error('ไม่สามารถดึงตำแหน่งได้');
       }
-
       const payload = {
         latitude: loc.coords.latitude,
         longitude: loc.coords.longitude,
         datetime: getCurrentDatetime().datetime,
+        work_date,
         check_type,
-        time_work_id,
+        time_work_id: time_work_id.id,
         remark
       };
-      console.log('Check-in payload:', payload);
-      // const response = await fetch('http://192.168.1.44:10601/checkin', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(payload),
-      // });
-
-      // if (!response.ok) {
-      //   throw new Error('ไม่สามารถส่งข้อมูลลงเวลาได้');
-      // }
-
-      // const json = await response.json();
-      // console.log('Check-in response:', json);
-      setModalVisible(true);
-      setTimeout(() => {
-        setModalVisible(false);
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [
-              {
-                name: 'HistoryStack',
-                state: {
-                  routes: [
-                    {
-                      name: 'History'
-                    },
-                  ],
+      const json = await createTimeStamp(payload).unwrap();
+      if (json.success) {
+        // await AsyncStorage.setItem('CheckIn', JSON.stringify({
+        //   ...payload,
+        //   start: time_work_id.start,
+        //   end: time_work_id.end
+        // }))
+        setModalVisible(true);
+        setTimeout(() => {
+          setModalVisible(false);
+          navigation.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [
+                {
+                  name: 'HistoryStack',
+                  state: {
+                    routes: [
+                      {
+                        name: 'History',
+                        params: { refresh: Date.now() }
+                      },
+                    ],
+                  },
                 },
-              },
-            ],
-          })
-        );
-
-      }, 1000);
+              ],
+            })
+          );
+        }, 1000);
+      } else {
+        Alert.alert('แจ้งเตือน', json.msg)
+      }
     } catch (error) {
       console.error('Error during check-in:', error);
       Alert.alert('ข้อผิดพลาด', error.message || 'เกิดข้อผิดพลาดในการลงเวลา');

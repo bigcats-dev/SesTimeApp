@@ -46,7 +46,8 @@ export function getCurrentDatetime() {
     time: `${hours}:${minutes}:${seconds}`,
     datetime: `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`,
     iso: now.toISOString(),
-    jsDate: now
+    jsDate: now,
+    month
   };
 }
 
@@ -55,3 +56,52 @@ export function getDateMinusDays(days) {
   date.setDate(date.getDate() - days);
   return date;
 }
+
+export function getDateAddDays(days) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date;
+}
+
+export function generateThaiMonths() {
+  const monthNames = [
+    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
+    'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม',
+    'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+  ];
+
+  return monthNames.map((name, index) => ({
+    id: index + 1,
+    name
+  }));
+}
+
+export function isNowAfter(timeStr) {
+  const now = getCurrentDatetime().jsDate;
+  const target = getCurrentDatetime().jsDate;
+  const [h, m] = timeStr.split(':').map(Number);
+  target.setHours(h, m, 0, 0);
+  return now.getTime() > target.getTime();
+}
+
+export function subtractLeaveFromWork(workStart, workEnd, leaveStart, leaveEnd) {
+  const toMinutes = (t) => {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  };
+
+  const workStartMin = toMinutes(workStart);
+  const workEndMin = toMinutes(workEnd);
+  const leaveStartMin = toMinutes(leaveStart);
+  const leaveEndMin = toMinutes(leaveEnd);
+  // leave morning
+  if (leaveStartMin <= workStartMin && leaveEndMin < workEndMin) {
+    return { start: leaveEnd, end: workEnd };
+  }
+  // leave afternoon
+  if (leaveStartMin > workStartMin && leaveEndMin >= workEndMin) {
+    return { start: workStart, end: leaveStart };
+  }
+  return { start: workStart, end: workEnd };
+}
+

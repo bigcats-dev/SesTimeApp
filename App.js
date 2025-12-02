@@ -55,10 +55,10 @@ function CustomDrawerContent(props) {
 
   const menuItems = [
     { label: 'Dashboard', icon: 'view-dashboard', route: 'Dashboard', color: '#EB5757' },
-    { label: 'ลงเวลาเข้างาน', icon: 'qrcode-scan', route: 'CheckInStack',nested: { screen: 'CheckIn' }, color: '#EB5757' },
+    { label: 'ลงเวลาเข้า-ออกงาน', icon: 'qrcode-scan', route: 'CheckInStack',nested: { screen: 'CheckIn' }, color: '#EB5757' },
     { label: 'ตารางการทำงาน', icon: 'calendar-month', route: 'Agenda', color: '#EB5757' },
     { label: 'การลา', icon: 'briefcase-clock', route: 'LeaveStack', nested: { screen: 'Leave' }, color: '#EB5757' },
-    { label: 'ประวัติการเข้างาน', icon: 'history', route: 'HistoryStack', color: '#EB5757' },
+    { label: 'ประวัติการเข้างาน', icon: 'history', route: 'HistoryStack', color: '#EB5757',nested: { screen: 'History' } },
     { label: 'ประวัติการขอ OT', icon: 'alarm', route: 'OverTimeStack',nested: { screen: 'OverTime' }, color: '#EB5757' },
     { label: 'ออกจากระบบ', icon: 'logout', route: 'Login', replace: true, color: '#EB5757' },
   ];

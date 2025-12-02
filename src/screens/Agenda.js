@@ -28,23 +28,53 @@ export default function AgendaScreen({ navigation }) {
         };
         if (isLeaveDay) {
           const i = updatedWorkDays.findIndex(d => d.title == dayStr);
-          const grouped = updatedWorkDays[i]?.leave_detail?.reduce((acc, curr) => {
-            if (!acc.date) {
-              acc.date = curr.date;
-              acc.leave_type = curr.leave_type;
-              acc.reason = curr.reason;
-              acc.shift = [];
-              acc.isLeaveDay = isLeaveDay;
+          const leaves = [...updatedWorkDays[i].leave_detail];
+          const mergedData = updatedWorkDays[i].data.map(item => {
+            const leave = leaves?.find(l => l.time_work_id === item.id);
+            if (leave) {
+              return {
+                ...item,
+                isLeaveDay: true,
+                leave: leave
+              };
             }
-            acc.shift.push({ start_time: curr.start_time, end_time: curr.end_time });
-            return acc;
-          }, {});
+            return item;
+          })
           updatedWorkDays[i] = {
             title: updatedWorkDays[i].title,
-            data: [grouped]
+            data: mergedData
           }
+
+          // const grouped = updatedWorkDays[i]?.leave_detail?.reduce((acc, curr) => {
+          //   if (!acc.date) {
+          //     acc.date = curr.date;
+          //     acc.leave_type = curr.leave_type;
+          //     acc.reason = curr.reason;
+          //     acc.shift = [];
+          //     acc.isLeaveDay = isLeaveDay;
+          //   }
+          //   acc.shift.push({ start_time: curr.start_time, end_time: curr.end_time, time_work_id: curr.time_work_id });
+          //   return acc;
+          // }, {});
+
+          // const leaves = updatedWorkDays[i].leave_detail;
+          // const noLeaveData = updatedWorkDays[i].data.filter(
+          //   item => !leaves.some(l => l.time_work_id === item.id)
+          // );
+          // if (noLeaveData.length == 0) {
+          //   updatedWorkDays[i] = {
+          //     title: updatedWorkDays[i].title,
+          //     data: [grouped]
+          //   }
+          // } else {
+          //   updatedWorkDays[i] = {
+          //     ...updatedWorkDays[i],
+          //     data: [grouped, ...noLeaveData]
+          //   };
+          // }
         }
       }
+
       setItems({ items: updatedWorkDays, markedDates: newMarkedDates })
     } catch (error) {
       console.error("Error fetching work days:", error);

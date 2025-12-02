@@ -31,7 +31,13 @@ export default function LeaveForm({ navigation }) {
       if (isEmptyString(startDate)) return;
       try {
         const response = await fetchSchedule({ startDate, endDate }).unwrap();
-        setItems(response);
+        const filtered = response.filter(item => {
+          // ไม่ต้องการวันที่มีกะการทำงานข้ามวัน
+          // 2025-12-10 → กะข้ามวัน (startDate)
+          // 2025-12-09 → รายการของวันก่อนหน้า (shift day) (ไม่ต้องการ)
+          return new Date(item.title) >= new Date(startDate);
+        });
+        setItems(filtered);
       } catch (error) {
         console.error("Error fetching agenda items:", error);
         setItems([]);
@@ -141,6 +147,7 @@ export default function LeaveForm({ navigation }) {
           date: day.title,
           type: type,
           leaveDuration: day.leaveType,
+          time_work_id: d.id,
           start: d.start,
           end: d.end
         }))
@@ -165,7 +172,7 @@ export default function LeaveForm({ navigation }) {
       console.error('❌ Error saving leave:', JSON.stringify(error));
       Alert.alert('เกิดข้อผิดพลาดในการบันทึกการลา');
     }
-  }, [type,items,reason]);
+  }, [type, items, reason]);
 
   const handleConfirm = () => {
     const errors = {};

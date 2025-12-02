@@ -10,8 +10,6 @@ export default function WorkCalendar({ onDayPress, startDate, endDate, minDate }
 
   const generateMarkedDates = async (result, year, month) => {
     try {
-      const leaveDays = [];
-      const holidays = [];
       const workDays = result.map(day => ({ ...day }));
       const daysInMonth = new Date(year, month, 0).getDate();
       const newMarkedDates = {};
@@ -20,9 +18,8 @@ export default function WorkCalendar({ onDayPress, startDate, endDate, minDate }
         const dayStr = `${year}-${month.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
         const isWorkDay = workDays.some(d => d.title == dayStr);
         const isLeaveDay = workDays.some(d => d.title == dayStr && d.is_leave === true);
-        const isHoliday = holidays.includes(dayStr);
         const isPast = dayStr < minDate;
-        const disabled = !isWorkDay || isPast || isLeaveDay;
+        const disabled = isPast ? true :  (!isWorkDay || isLeaveDay);
         newMarkedDates[dayStr] = {
           marked: isWorkDay,
           dotColor: isLeaveDay ? 'red' : 'blue',
@@ -71,7 +68,7 @@ export default function WorkCalendar({ onDayPress, startDate, endDate, minDate }
       }
     };
     loadData();
-  }, []);
+  }, [minDate]);
 
   useEffect(() => {
     const newMarkedDates = { ...markedDates };

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, ScrollView } from 'react-native';
 import { Portal, Card, Divider, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -14,11 +14,12 @@ export default function CustomMenu({ anchorText, items, onSelect }) {
           justifyContent: 'space-between',
           alignItems: 'center',
           borderWidth: 1,
-          borderColor: '#7d7d7dff', 
+          borderColor: '#7d7d7dff',
           paddingVertical: 10,
           paddingHorizontal: 16,
           borderRadius: 20,
           backgroundColor: '#ece6efff',
+          width: '100%'
         }}
       >
         <Text style={{ fontSize: 16 }}>{anchorText}</Text>
@@ -45,22 +46,25 @@ export default function CustomMenu({ anchorText, items, onSelect }) {
               borderRadius: 12,
               elevation: 4,
               backgroundColor: 'white',
+              maxHeight: 500,
             }}
           >
-            {items.map(({id, name}, index) => (
-              <React.Fragment key={index}>
-                <TouchableOpacity
-                  onPress={() => {
-                    onSelect({id, name});
-                    setVisible(false);
-                  }}
-                  style={{ padding: 16 }}
-                >
-                  <Text style={{fontSize: 16}}>{name}</Text>
-                </TouchableOpacity>
-                {index < items.length - 1 && <Divider />}
-              </React.Fragment>
-            ))}
+            <ScrollView>
+              {items.map(({ id, name }, index) => (
+                <React.Fragment key={index}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      onSelect({ id, name });
+                      setVisible(false);
+                    }}
+                    style={{ padding: 16 }}
+                  >
+                    <Text style={{ fontSize: 16 }}>{name}</Text>
+                  </TouchableOpacity>
+                  {index < items.length - 1 && <Divider />}
+                </React.Fragment>
+              ))}
+            </ScrollView>
           </Card>
         </Portal>
       )}
