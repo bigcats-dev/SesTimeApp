@@ -24,10 +24,9 @@ export default function CustomAgendaListExample({
   items,
   markedDates,
   onMonthChange,
-  onAgendaItemPress = () => {}
+  onAgendaItemPress = () => { }
 }) {
   const [ready, setReady] = useState(false);
-  const firstDate = items.length > 0 ? items[0].title : new Date().toISOString().split('T')[0];
   const renderItem = useCallback(({ item, section }) => {
     return <AgendaItem onAgendaItemPress={onAgendaItemPress} section={section} item={item} />;
   }, [onAgendaItemPress]);
@@ -90,6 +89,8 @@ export default function CustomAgendaListExample({
   );
 
   if (!ready) return null;
+  const firstDate = Object.keys(markedDates)[0];
+  if (__DEV__) console.log('firstDate', firstDate);
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <CalendarProvider
@@ -119,14 +120,16 @@ export default function CustomAgendaListExample({
             backgroundColor: '#fff'
           }}
         />
+        {items.length > 0 && (
+          <AgendaList
+            testID="agendalist"
+            sections={items}
+            renderItem={renderItem}
+            ListEmptyComponent={renderEmptyList}
+            sectionStyle={styles.section}
+          />
+        )}
 
-        <AgendaList
-          testID="agendalist"
-          sections={items}
-          renderItem={renderItem}
-          ListEmptyComponent={renderEmptyList}
-          sectionStyle={styles.section}
-        />
       </CalendarProvider>
     </View>
   );

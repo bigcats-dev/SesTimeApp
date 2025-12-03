@@ -22,7 +22,8 @@
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
-        "android.permission.CAMERA"
+        "CAMERA",
+        "RECEIVE_BOOT_COMPLETED"
       ],
       "package": "com.pimpae.SesTimeApp"
     },
@@ -47,6 +48,16 @@
         {
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
           "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/adaptive-icon.png",
+          "color": "#ffffff",
+          "defaultChannel": "default",
+          "sounds": [],
+          "enableBackgroundRemoteNotifications": false
         }
       ]
     ],

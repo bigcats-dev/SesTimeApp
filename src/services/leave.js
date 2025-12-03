@@ -4,7 +4,7 @@ import scheduleApi from './schedule';
 const leaveApi = createApi({
   reducerPath: 'leaveApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.API_URL || 'http://192.168.1.44:10601/api/employees',
+    baseUrl: process.env.API_URL || 'http://192.168.1.43:10601/api/employees',
     prepareHeaders: (headers, { getState }) => {
       // attach auth token if present in state
       const token = getState().auth?.token;

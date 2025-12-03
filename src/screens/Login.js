@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Image,
@@ -17,6 +17,9 @@ import { useAuthStorage } from '../hooks/useAuthStorage';
 import { getDeviceId } from '../hooks/useDeviceId';
 import { useDispatch, useSelector } from 'react-redux';
 import { loading, loginUser } from '../services/authSlice';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 
 const inputsConfig = [
   { name: 'username', label: 'ชื่อผู้ใช้งาน (Username)' },
@@ -26,8 +29,45 @@ const inputsConfig = [
 export default function Login({ navigation }) {
   const dispatch = useDispatch();
   const isLoading = useSelector(loading)
-  const [form, setForm] = useState({ username: '', password: '' });
+  const [form, setForm] = useState({ username: '', password: '', token: '' });
   const [errors, setErrors] = useState({ username: '', password: '' });
+
+  useEffect(() => {
+    registerForPushNotificationsAsync();
+  }, [])
+
+  async function registerForPushNotificationsAsync() {
+    if (!Device.isDevice) {
+      Alert.alert('แจ้งเตือน', "ไม่สามารถใช้กับ emulator / simulator ได้ ต้องใช้กับมือถือจริง");
+      return;
+    }
+    const settings = await Notifications.getPermissionsAsync();
+    if (!settings.granted) {
+      const { status } = await Notifications.requestPermissionsAsync({
+        ios: {
+          allowAlert: true,
+          allowBadge: true,
+          allowSound: true,
+        },
+      });
+
+      if (status !== 'granted') {
+        Alert.alert('แจ้งเตือน', 'ไม่สามารถเปิดการแจ้งเตือนได้');
+        return null;
+      }
+    }
+
+    try {
+      const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+      if (!projectId) {
+        throw new Error('Project ID not found');
+      }
+      const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+      setForm((prev) => ({ ...prev, token }))
+    } catch (e) {
+      console.log('❌ getExpoPushTokenAsync error:', e);
+    }
+  }
 
   const handleChange = (name, value) => {
     setForm((prev) => ({ ...prev, [name]: value }));

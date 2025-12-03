@@ -6,7 +6,7 @@ export const loginUser = createAsyncThunk(
   async (credentials, { rejectWithValue }) => {
     try {
       if (__DEV__) console.log('credentials', credentials)
-      const response = await fetch('http://192.168.1.44:10601/api/login', {
+      const response = await fetch('http://192.168.1.43:10601/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
@@ -29,7 +29,7 @@ export const logoutUser = createAsyncThunk(
     try {
       const { token } = getState().auth
       if (token) {
-        await fetch('http://192.168.1.44:10601/api/logout', {
+        await fetch('http://192.168.1.43:10601/api/logout', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

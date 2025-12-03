@@ -21,14 +21,10 @@ export default function CheckIn({ navigation }) {
   const [errors, setErrors] = useState({ time_work_id: '', remark: '', check_type: '' });
 
   useEffect(() => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth() + 1;
-    const day = today.getDate();
-    const startDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+    const startDate = getCurrentDatetime().date;
     const loadData = async () => {
       try {
-        const result = await fetchSchedule({ startDate: '2025-12-20' }).unwrap();
+        const result = await fetchSchedule({ startDate }).unwrap();
         if (__DEV__) console.log('CheckIn scheduleData:', result);
         setScheduleData(result);
         const data = result[0]?.data;
