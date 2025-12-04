@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, FlatList, ScrollView } from 'react-native';
+import { View, FlatList, ScrollView, RefreshControl } from 'react-native';
 import { Text, Appbar, Card, DataTable, Button, Menu, ActivityIndicator } from 'react-native-paper';
 import styles from '../styles/style';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -14,8 +14,11 @@ import StatusLeave from '../components/StatusLeave';
 export default function OverTime({ navigation }) {
   const [page, setPage] = useState(1);
   const [dialogVisible, setDialogVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [id, setId] = useState(null);
-  const { data, isLoading, isFetching } = useGetOverTimesQuery({ page, limit: 50 })
+  const { data, isLoading, isFetching, refetch } = useGetOverTimesQuery({ page, limit: 50 }, {
+
+  })
   const [deleteOverTime, { isLoading: isDeleting }] = useDeleteOverTimeMutation()
 
   const handleLoadMore = () => {
@@ -33,6 +36,10 @@ export default function OverTime({ navigation }) {
     setDialogVisible(false)
     deleteOverTime(id).then((json) => console.log('delete leave successfulty.', JSON.stringify(json)))
   }, [id])
+
+  const onRefresh = useCallback(() => {
+    refetch()
+  }, [])
 
   const renderItem = ({ item }) => (
     <Card
@@ -86,6 +93,7 @@ export default function OverTime({ navigation }) {
             ListFooterComponent={isFetching ? <ActivityIndicator /> : null}
             ListEmptyComponent={
               <EmptyList icon="calendar-remove-outline" message="ไม่มีรายการการขอโอทีของคุณ" />}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           />)}
         </View>
       </View>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View } from 'react-native';
+import { View, ScrollView, RefreshControl } from 'react-native';
 import { ActivityIndicator, Appbar } from 'react-native-paper';
 import AgendaList from '../components/AgendaList';
 import styles from '../styles/style';
@@ -7,9 +7,11 @@ import { useRoute } from '@react-navigation/native';
 import { useLazyGetScheduleQuery } from '../services/schedule';
 import AppHeader from '../components/AppHeader';
 import { default as LeaveCardSkeleton } from './../components/skeletions/Leave'
+import { getCurrentDatetime } from '../utils';
 
 export default function AgendaScreen({ navigation }) {
   const [items, setItems] = useState({ items: [], markedDates: {} });
+  const [refreshing, setRefreshing] = useState(false);
   const route = useRoute();
   const from = route.params?.from || 'drawer';
   const [fetchSchedule, { isFetching }] = useLazyGetScheduleQuery()
@@ -80,20 +82,30 @@ export default function AgendaScreen({ navigation }) {
       console.error("Error fetching work days:", error);
     }
   }
+
+  const loadData = async () => {
+    setRefreshing(true);
+    const {
+      year,
+      month
+    } = getCurrentDatetime()
+    try {
+      const result = await fetchSchedule().unwrap();
+      generateMarkedDates(result, year, month);
+    } catch (error) {
+      console.error('error', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth() + 1;
-    const loadData = async () => {
-      try {
-        const result = await fetchSchedule().unwrap();
-        generateMarkedDates(result, year, month);
-      } catch (error) {
-        console.error('error', error);
-      }
-    };
     loadData();
   }, []);
+
+  const onRefresh = async () => {
+    await loadData();
+  };
 
   const onMonthChange = useCallback(async ({ dateString }) => {
     const [year, month] = dateString.split('-').map(Number);
@@ -116,7 +128,8 @@ export default function AgendaScreen({ navigation }) {
         <AgendaList
           items={items.items}
           markedDates={items.markedDates}
-          onMonthChange={onMonthChange} />
+          onMonthChange={onMonthChange}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} />
       )}
     </View>
   );

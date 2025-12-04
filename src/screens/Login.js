@@ -28,8 +28,9 @@ const inputsConfig = [
 
 export default function Login({ navigation }) {
   const dispatch = useDispatch();
-  const isLoading = useSelector(loading)
-  const [form, setForm] = useState({ username: '', password: '', token: '' });
+  const isLoading = useSelector(loading);
+  const [token, setToken] = useState('');
+  const [form, setForm] = useState({ username: '', password: '' });
   const [errors, setErrors] = useState({ username: '', password: '' });
 
   useEffect(() => {
@@ -63,7 +64,7 @@ export default function Login({ navigation }) {
         throw new Error('Project ID not found');
       }
       const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-      setForm((prev) => ({ ...prev, token }))
+      setToken(token)
     } catch (e) {
       console.log('❌ getExpoPushTokenAsync error:', e);
     }
@@ -96,7 +97,7 @@ export default function Login({ navigation }) {
     if (Object.values(newErrors).every((err) => isEmptyString(err))) {
       const deviceId = await getDeviceId();
       try {
-        const payload = { ...form, deviceId };
+        const payload = { ...form, deviceId, token };
         const result = await dispatch(loginUser(payload)).unwrap();
         console.log('✅ login success:', result);
         navigation.replace('MainDrawer');

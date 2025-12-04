@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Image, FlatList, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Image, FlatList, StyleSheet, SafeAreaView, RefreshControl } from 'react-native';
 import { Text, Appbar, Card, Button, ActivityIndicator } from 'react-native-paper';
 import styles from '../styles/style';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -15,8 +15,9 @@ import ConfirmDialog from '../components/ConfirmDialog';
 export default function Leave({ navigation }) {
   const [page, setPage] = useState(1);
   const [dialogVisible, setDialogVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [id, setId] = useState(null);
-  const { data, isLoading, isFetching } = useGetLeavesQuery({ page, limit: 50 })
+  const { data, isLoading, isFetching, refetch } = useGetLeavesQuery({ page, limit: 50 })
   const [deleteLeave, { isLoading: isDeleting }] = useDeleteLeaveMutation()
 
   const handleLoadMore = () => {
@@ -34,6 +35,10 @@ export default function Leave({ navigation }) {
     setDialogVisible(false)
     deleteLeave(id).then((json) => console.log('delete leave successfulty.', JSON.stringify(json)))
   }, [id])
+
+  const onRefresh = useCallback(() => {
+    refetch()
+  }, [])
 
   const renderItem = ({ item }) => {
     const grouped = item.data?.reduce((acc, item) => {
@@ -111,6 +116,7 @@ export default function Leave({ navigation }) {
             ListFooterComponent={isFetching ? <ActivityIndicator /> : null}
             ListEmptyComponent={
               <EmptyList icon="calendar-remove-outline" message="ไม่มีรายการลาของคุณ" />}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           />)}
         </View>
       </View>

@@ -1,5 +1,5 @@
-import { View, Text, KeyboardAvoidingView, ScrollView, Platform } from 'react-native'
-import React, { useEffect, useCallback } from 'react'
+import { View, Text, KeyboardAvoidingView, ScrollView, Platform, RefreshControl } from 'react-native'
+import React, { useEffect, useCallback, useState } from 'react'
 import AppHeader from '../components/AppHeader'
 import { useLazyGetScheduleQuery } from '../services/schedule'
 import { default as AgendaList } from '../components/AgendaList'
@@ -8,7 +8,8 @@ import { ActivityIndicator } from 'react-native-paper'
 import { default as CardSkeleton } from './../components/skeletions/Leave'
 
 const OverTimeAgenda = ({ navigation }) => {
-  const [items, setItems] = React.useState({ items: [], markedDates: [] });
+  const [items, setItems] = useState({ items: [], markedDates: [] });
+  const [refreshing, setRefreshing] = useState(false);
   const [fetchSchedule, { isFetching }] = useLazyGetScheduleQuery()
 
   const generateMarkedDates = async (workDaysData, year, month) => {
@@ -65,20 +66,29 @@ const OverTimeAgenda = ({ navigation }) => {
     }
   }
 
+  const loadData = async () => {
+    setRefreshing(true);
+    const {
+      year,
+      month
+    } = getCurrentDatetime()
+    try {
+      const result = await fetchSchedule().unwrap();
+      generateMarkedDates(result, year, month);
+    } catch (error) {
+      console.error('error', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth() + 1;
-    const loadData = async () => {
-      try {
-        const result = await fetchSchedule().unwrap();
-        generateMarkedDates(result, year, month);
-      } catch (error) {
-        console.error('error', error);
-      }
-    };
     loadData();
   }, []);
+
+  const onRefresh = async () => {
+    await loadData();
+  };
 
   const onMonthChange = useCallback(async ({ dateString }) => {
     const [year, month] = dateString.split('-').map(Number);
@@ -113,7 +123,9 @@ const OverTimeAgenda = ({ navigation }) => {
             items={items.items}
             markedDates={items.markedDates}
             onMonthChange={onMonthChange}
-            onAgendaItemPress={onAgendaItemPress} />
+            onAgendaItemPress={onAgendaItemPress}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} />
+
         )}
       </View>
     </KeyboardAvoidingView >

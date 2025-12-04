@@ -47,7 +47,8 @@ export function getCurrentDatetime() {
     datetime: `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`,
     iso: now.toISOString(),
     jsDate: now,
-    month
+    month,
+    year,
   };
 }
 

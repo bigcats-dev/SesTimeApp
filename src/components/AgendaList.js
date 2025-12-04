@@ -24,6 +24,7 @@ export default function CustomAgendaListExample({
   items,
   markedDates,
   onMonthChange,
+  refreshControl,
   onAgendaItemPress = () => { }
 }) {
   const [ready, setReady] = useState(false);
@@ -127,6 +128,7 @@ export default function CustomAgendaListExample({
             renderItem={renderItem}
             ListEmptyComponent={renderEmptyList}
             sectionStyle={styles.section}
+            refreshControl={refreshControl}
           />
         )}
 
