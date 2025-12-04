@@ -41,6 +41,21 @@
         "API_URL": "http://203.154.11.4:10602"
       }
     },
+    "production-apk": {
+      "distribution": "store",
+      "node": "20.19.4",
+      "android": {
+        "buildType": "apk",
+        "image": "latest"
+      },
+      "ios": {
+        "image": "latest"
+      },
+      "env": {
+        "APP_ENV": "production",
+        "API_URL": "http://203.154.11.4:10602"
+      }
+    },
     "internal": {
       "distribution": "internal",
       "node": "20.19.4",
