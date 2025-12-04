@@ -27,7 +27,7 @@ export default ({ config }) => ({
       },
       edgeToEdgeEnabled: true,
       permissions: ['CAMERA', 'RECEIVE_BOOT_COMPLETED'],
-      package: 'com.pimpae.SesTimeApp',
+      package: 'com.siamexpress.timestamp',
     },
 
     web: {
@@ -71,6 +71,12 @@ export default ({ config }) => ({
             networkSecurityConfig: "./assets/android/network_security_config.xml",
             cleartextTrafficPermitted: true
           }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your friends."
         }
       ]
     ],

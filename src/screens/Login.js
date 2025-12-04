@@ -20,6 +20,7 @@ import { loading, loginUser } from '../services/authSlice';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
+import useAllPermissions from '../hooks/useAllPermission';
 
 const inputsConfig = [
   { name: 'username', label: 'ชื่อผู้ใช้งาน (Username)' },
@@ -32,9 +33,12 @@ export default function Login({ navigation }) {
   const [token, setToken] = useState('');
   const [form, setForm] = useState({ username: '', password: '' });
   const [errors, setErrors] = useState({ username: '', password: '' });
+  const { requestAll } = useAllPermissions()
+
 
   useEffect(() => {
     registerForPushNotificationsAsync();
+    requestAll();
   }, [])
 
   async function registerForPushNotificationsAsync() {

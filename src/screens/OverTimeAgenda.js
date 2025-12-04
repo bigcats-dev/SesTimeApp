@@ -128,7 +128,7 @@ const OverTimeAgenda = ({ navigation }) => {
 
         )}
       </View>
-    </KeyboardAvoidingView >
+    </KeyboardAvoidingView>
   )
 }
 
