@@ -6,6 +6,7 @@ import styles from '../styles/style';
 import { useRoute } from '@react-navigation/native';
 import { useLazyGetScheduleQuery } from '../services/schedule';
 import AppHeader from '../components/AppHeader';
+import { default as LeaveCardSkeleton } from './../components/skeletions/Leave'
 
 export default function AgendaScreen({ navigation }) {
   const [items, setItems] = useState({ items: [], markedDates: {} });
@@ -110,7 +111,7 @@ export default function AgendaScreen({ navigation }) {
     <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
       {/* Header */}
       <AppHeader title="ตารางการทำงาน" />
-      {isFetching && <ActivityIndicator size={'small'} color='#ff6969ff' style={{marginVertical: 10}} />}
+      {isFetching && [...Array(10)].map((_, i) => <LeaveCardSkeleton key={i} />)}
       {Object.keys(items.markedDates).length > 0 && (
         <AgendaList
           items={items.items}

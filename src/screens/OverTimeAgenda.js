@@ -3,6 +3,9 @@ import React, { useEffect, useCallback } from 'react'
 import AppHeader from '../components/AppHeader'
 import { useLazyGetScheduleQuery } from '../services/schedule'
 import { default as AgendaList } from '../components/AgendaList'
+import { getCurrentDatetime } from '../utils'
+import { ActivityIndicator } from 'react-native-paper'
+import { default as CardSkeleton } from './../components/skeletions/Leave'
 
 const OverTimeAgenda = ({ navigation }) => {
   const [items, setItems] = React.useState({ items: [], markedDates: [] });
@@ -90,7 +93,11 @@ const OverTimeAgenda = ({ navigation }) => {
       console.log('section:', section);
       console.log('Pressed item:', item);
     }
-    navigation.navigate('OverTimeForm', { item, section, from: 'stack' });
+    const currentDate = getCurrentDatetime().jsDate.getTime();
+    const { title } = section;
+    if (currentDate < (new Date(title)).getTime()) {
+      navigation.navigate('OverTimeForm', { item, section, from: 'stack' });
+    }
   }
 
   return (
@@ -100,11 +107,14 @@ const OverTimeAgenda = ({ navigation }) => {
     >
       <View style={{ flex: 1 }}>
         <AppHeader title={'ตารางการทำงาน'} />
-        <AgendaList
-          items={items.items}
-          markedDates={items.markedDates}
-          onMonthChange={onMonthChange}
-          onAgendaItemPress={onAgendaItemPress} />
+        {isFetching && [...Array(10)].map((_, i) => <CardSkeleton key={i} />)}
+        {Object.keys(items.markedDates).length > 0 && (
+          <AgendaList
+            items={items.items}
+            markedDates={items.markedDates}
+            onMonthChange={onMonthChange}
+            onAgendaItemPress={onAgendaItemPress} />
+        )}
       </View>
     </KeyboardAvoidingView >
   )

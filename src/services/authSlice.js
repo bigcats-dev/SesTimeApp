@@ -1,12 +1,16 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import { authStorage } from './../storage/authStorage'
+import ENV from './../config/env'
 
 export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
-      if (__DEV__) console.log('credentials', credentials)
-      const response = await fetch('http://192.168.1.43:10601/api/login', {
+      if (__DEV__) {
+        console.log('credentials', credentials)
+        console.log('ENV', ENV)
+      }
+      const response = await fetch(`${ENV.API_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
@@ -29,7 +33,7 @@ export const logoutUser = createAsyncThunk(
     try {
       const { token } = getState().auth
       if (token) {
-        await fetch('http://192.168.1.43:10601/api/logout', {
+        await fetch(`${ENV.API_URL}/api/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

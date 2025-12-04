@@ -1,9 +1,9 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-
+import ENV from '../config/env';
 const scheduleApi = createApi({
   reducerPath: 'scheduleApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.API_URL || 'http://192.168.1.43:10601/api/employees',
+    baseUrl: `${ENV.API_URL}/api/employees`,
     prepareHeaders: (headers, { getState }) => {
       // attach auth token if present in state
       const token = getState().auth?.token;

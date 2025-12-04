@@ -5,6 +5,7 @@ import styles from '../styles/style';
 import { useRoute } from '@react-navigation/native';
 import { useGetTimeStampHistoryQuery, useLazyGetTimeStampHistoryQuery } from '../services/schedule';
 import { generateThaiMonths, getCurrentDatetime, toDateThai } from '../utils';
+import { default as HistorySkeleton } from './../components/skeletions/History'
 import AppHeader from '../components/AppHeader';
 import CustomMenu from '../components/CustomMenu';
 
@@ -49,7 +50,7 @@ export default function History({ navigation, route }) {
           items={months}
           onSelect={onMonthChange} />
       </View>
-      {isLoading && <ActivityIndicator />}
+      {isLoading && [...Array(10)].map((_, i) => <HistorySkeleton key={i} />)}
       {historyData && Array.isArray(historyData.days) && (
         <>
           <ScrollView ref={scrollRef} style={{ paddingHorizontal: 16 }}>

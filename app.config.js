@@ -1,0 +1,79 @@
+import 'dotenv/config';
+
+export default ({ config }) => ({
+  expo: {
+    name: process.env.APP_ENV === 'production' ? 'SesTimeApp' : 'SesTimeApp (DEV)',
+    slug: 'SesTimeApp',
+    version: '1.0.0',
+    orientation: 'portrait',
+    icon: './assets/icon.png',
+    userInterfaceStyle: 'light',
+    newArchEnabled: true,
+
+    splash: {
+      image: './assets/splashx.png',
+      resizeMode: 'contain',
+      backgroundColor: '#ffffff',
+    },
+
+    ios: {
+      supportsTablet: true,
+    },
+
+    android: {
+      adaptiveIcon: {
+        foregroundImage: './assets/adaptive-icon.png',
+        backgroundColor: '#ffffff',
+      },
+      edgeToEdgeEnabled: true,
+      permissions: ['CAMERA', 'RECEIVE_BOOT_COMPLETED'],
+      package: 'com.pimpae.SesTimeApp',
+    },
+
+    web: {
+      favicon: './assets/favicon.png',
+    },
+
+    plugins: [
+      [
+        'expo-location',
+        {
+          locationAlwaysAndWhenInUsePermission: 'Allow $(PRODUCT_NAME) to use your location.',
+        },
+      ],
+      [
+        'expo-local-authentication',
+        {
+          faceIDPermission: 'Allow $(PRODUCT_NAME) to use Face ID.',
+        },
+      ],
+      [
+        'expo-camera',
+        {
+          cameraPermission: 'Allow $(PRODUCT_NAME) to access your camera',
+          recordAudioAndroid: true,
+        },
+      ],
+      [
+        'expo-notifications',
+        {
+          icon: './assets/adaptive-icon.png',
+          color: '#ffffff',
+          defaultChannel: 'default',
+          sounds: [],
+          enableBackgroundRemoteNotifications: false,
+        },
+      ],
+    ],
+
+    extra: {
+      eas: {
+        projectId: '0e1cffb8-b52f-48eb-80e0-801ca52d0a0e',
+      },
+      apiUrl: process.env.API_URL,
+      appEnv: process.env.APP_ENV,
+    },
+
+    owner: 'pimpae',
+  },
+});

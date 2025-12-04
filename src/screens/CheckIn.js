@@ -9,6 +9,7 @@ import { useGetTipsQuery } from '../services/master';
 import { useGetScheduleQuery, useLazyGetScheduleQuery } from '../services/schedule';
 import { getCurrentDatetime, isEmptyString, isNowAfter, subtractLeaveFromWork, toDateThai } from '../utils';
 import Error from '../components/Error';
+import { default as CardSkeleton } from './../components/skeletions/History'
 
 export default function CheckIn({ navigation }) {
   const { data, isLoading } = useGetTipsQuery();
@@ -177,7 +178,7 @@ export default function CheckIn({ navigation }) {
           {/* Tips Section */}
           <Text style={styles.sectionTitle}>คำแนะนำก่อนการลงเวลาเข้างาน</Text>
 
-          {isLoading && isFetching && <ActivityIndicator />}
+          {isLoading && isFetching && [...Array(5)].map((_, i) => <CardSkeleton key={i} />)}
 
           <List.Section>
             {data?.data?.map((i) => (
