@@ -64,6 +64,15 @@ export default ({ config }) => ({
           enableBackgroundRemoteNotifications: false,
         },
       ],
+      [
+        "expo-build-properties",
+        {
+          android: {
+            networkSecurityConfig: "./assets/android/network_security_config.xml",
+            cleartextTrafficPermitted: true
+          }
+        }
+      ]
     ],
 
     extra: {
