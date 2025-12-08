@@ -101,7 +101,7 @@ export default function Login({ navigation }) {
     if (Object.values(newErrors).every((err) => isEmptyString(err))) {
       const deviceId = await getDeviceId();
       try {
-        const payload = { ...form, deviceId, token };
+        const payload = { ...form, deviceId, notification_token: token };
         const result = await dispatch(loginUser(payload)).unwrap();
         console.log('✅ login success:', result);
         navigation.replace('MainDrawer');
