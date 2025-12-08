@@ -38,7 +38,7 @@
       },
       "env": {
         "APP_ENV": "production",
-        "API_URL": "http://203.154.11.4:10602"
+        "API_URL": "https://siamexpresssurvey.com/timestamp"
       }
     },
     "production-apk": {
@@ -53,7 +53,7 @@
       },
       "env": {
         "APP_ENV": "production",
-        "API_URL": "http://203.154.11.4:10602"
+        "API_URL": "https://siamexpresssurvey.com/timestamp"
       }
     },
     "internal": {
