@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { View, Image, ScrollView } from 'react-native';
-import { Text, Appbar, Card, DataTable, Button, Menu, ActivityIndicator } from 'react-native-paper';
+import { View, ScrollView, RefreshControl } from 'react-native';
+import { Text, Card, DataTable } from 'react-native-paper';
 import styles from '../styles/style';
 import { useRoute } from '@react-navigation/native';
 import { useGetTimeStampHistoryQuery, useLazyGetTimeStampHistoryQuery } from '../services/schedule';
@@ -13,6 +13,7 @@ export default function History({ navigation, route }) {
   const refreshKey = route?.params?.refresh;
   const currentDate = getCurrentDatetime();
   const [month, setMonth] = useState(currentDate.month);
+  const [refresh, setRefresh] = useState(false);
   const { data: historyData, isLoading, refetch } = useGetTimeStampHistoryQuery(
     { month },
     { skip: !month }
@@ -39,6 +40,10 @@ export default function History({ navigation, route }) {
     setMonth(id)
   }, [])
 
+  const onRefresh = useCallback(() => {
+    refetch();
+  }, [])
+
   const summary = historyData?.summary;
 
   return (
@@ -53,7 +58,9 @@ export default function History({ navigation, route }) {
       {isLoading && [...Array(10)].map((_, i) => <HistorySkeleton key={i} />)}
       {historyData && Array.isArray(historyData.days) && (
         <>
-          <ScrollView ref={scrollRef} style={{ paddingHorizontal: 16 }}>
+          <ScrollView 
+            ref={scrollRef} style={{ paddingHorizontal: 16 }}
+            refreshControl={<RefreshControl refreshing={refresh} onRefresh={onRefresh} />}>
             <DataTable>
               <DataTable.Header>
                 <DataTable.Title textStyle={{ fontWeight: 'bold', fontSize: 16 }}>วันที่</DataTable.Title>
@@ -67,11 +74,12 @@ export default function History({ navigation, route }) {
 
               {historyData.days.map(({ date, schedules, leave }, index) => {
                 const isToday = date === todayStr;
+
                 return (
                   <View key={index}>
                     <DataTable.Row
                       onPress={() => navigation.navigate('HistoryDetail', { record: date })}
-                      style={{ backgroundColor: isToday ? '#fbd5d5ff' : '#fcf6f6ff' }}
+                      style={{ backgroundColor: isToday ? '#f6b9b9ff' : '#fcf6f6ff' }}
                     >
                       <DataTable.Cell collapsable={1}>
                         {toDateThai(date)}
@@ -92,7 +100,7 @@ export default function History({ navigation, route }) {
                         )}
                       </DataTable.Cell>
                     </DataTable.Row>
-                    {schedules?.map(({ id, start_time, end_time, timestamp }) => {
+                    {schedules?.map(({ id, start_time, end_time, timestamp, absent }) => {
                       const isLeave = leave?.details?.some(l => l.time_work_id == id && l.duation === 'FULL')
                       return (
                         <DataTable.Row key={`${date}_${start_time}`}>
@@ -102,23 +110,29 @@ export default function History({ navigation, route }) {
                           {isLeave
                             ? (
                               <>
-                                <DataTable.Cell style={{backgroundColor: '#eea5a5ff'}} collapsable={2}>
-                                  <Text style={{textAlign: 'center', color: '#000'}}>ลาเต็มวัน</Text>
+                                <DataTable.Cell style={{ backgroundColor: '#eea5a5ff' }} collapsable={2}>
+                                  <Text style={{ textAlign: 'center', color: '#000' }}>ลาเต็มวัน</Text>
                                 </DataTable.Cell>
                               </>
                             )
-                            : (
-                              <>
-                                <DataTable.Cell textStyle={{ textAlign: 'center' }}>
-                                  <Text style={{ textAlign: 'center', width: '100%', color: timestamp?.keeping_status?.id == 1 ? 'green' : (timestamp?.keeping_status?.id == 3 ? 'red' : '') }}>
-                                    {timestamp?.time_in ?? '-'}
-                                  </Text>
+                            : absent
+                              ? (
+                                <DataTable.Cell style={{backgroundColor: '#fae3e3ff'}} collapsable="2">
+                                  <Text style={{color: '#000'}}>ขาดงาน</Text>
                                 </DataTable.Cell>
-                                <DataTable.Cell>
-                                  <Text style={{ textAlign: 'center', width: '100%' }}>{timestamp?.time_out ?? '-'}</Text>
-                                </DataTable.Cell>
-                              </>
-                            )}
+                              )
+                              : (
+                                <>
+                                  <DataTable.Cell textStyle={{ textAlign: 'center' }}>
+                                    <Text style={{ textAlign: 'center', width: '100%', color: timestamp?.keeping_status?.id == 1 ? 'green' : (timestamp?.keeping_status?.id == 3 ? 'red' : '') }}>
+                                      {timestamp?.time_in ?? '-'}
+                                    </Text>
+                                  </DataTable.Cell>
+                                  <DataTable.Cell>
+                                    <Text style={{ textAlign: 'center', width: '100%' }}>{timestamp?.time_out ?? '-'}</Text>
+                                  </DataTable.Cell>
+                                </>)
+                          }
 
                         </DataTable.Row>
                       );
@@ -141,7 +155,8 @@ export default function History({ navigation, route }) {
             </Text>
           </Card>
         </>
-      )}
-    </View>
+      )
+      }
+    </View >
   );
 }

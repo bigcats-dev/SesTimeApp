@@ -2,5 +2,6 @@
 <network-security-config xmlns:android="http://schemas.android.com/apk/res/android">
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">203.154.11.4</domain>
+        <domain includeSubdomains="true">siamexpresssurvey.com</domain>
     </domain-config>
 </network-security-config>

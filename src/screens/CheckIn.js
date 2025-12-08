@@ -6,7 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import AppHeader from '../components/AppHeader';
 import { useGetTipsQuery } from '../services/master';
-import { useGetScheduleQuery, useLazyGetScheduleQuery } from '../services/schedule';
+import { useLazyGetScheduleQuery } from '../services/schedule';
 import { getCurrentDatetime, isEmptyString, isNowAfter, subtractLeaveFromWork, toDateThai } from '../utils';
 import Error from '../components/Error';
 import { default as CardSkeleton } from './../components/skeletions/History'
@@ -30,7 +30,7 @@ export default function CheckIn({ navigation }) {
         setScheduleData(result);
         const data = result[0]?.data;
         if (Array.isArray(data) && data.length == 1) {
-          setTimeWorkId(String(data[0].id));
+          setTimeWorkId(data[0]);
         }
       } catch (error) {
         console.error('error', error);

@@ -29,7 +29,7 @@ export default function FileAttachment({ onChange, multiple = false }) {
 
   const pickImageFromGallery = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      mediaTypes: 'images',
       quality: 1,
     });
 
