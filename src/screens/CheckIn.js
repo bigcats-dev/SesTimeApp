@@ -30,6 +30,7 @@ export default function CheckIn({ navigation }) {
         setScheduleData(result);
         const data = result[0]?.data;
         if (Array.isArray(data) && data.length == 1) {
+          setWorkDate(result[0]?.title)
           setTimeWorkId(data[0]);
         }
       } catch (error) {
