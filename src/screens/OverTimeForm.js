@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import AppHeader from '../components/AppHeader'
 import { Button, Card, Divider, RadioButton, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { isEmptyString, toDateThai } from '../utils';
+import { getCurrentDatetime, isEmptyString, isNowAfter, toDateThai } from '../utils';
 import Error from '../components/Error';
 import { useCreateOverTimeMutation } from '../services/overTime';
 import styles from '../styles/style';
@@ -93,6 +93,7 @@ const OverTimeForm = ({ navigation, route }) => {
     }
   }
 
+  const currentDate = getCurrentDatetime().date;
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -128,14 +129,37 @@ const OverTimeForm = ({ navigation, route }) => {
                   value={type}
                 >
                   <View style={{ flexDirection: 'column', justifyContent: 'space-around', marginBottom: 8 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <RadioButton value="BEFORE" />
-                      <Text>ก่อนเวลาเข้างาน</Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <RadioButton value="AFTER" />
-                      <Text>หลังเวลาเลิกงาน</Text>
-                    </View>
+                    {currentDate === section.title
+                      ? (!isNowAfter(item.start)
+                        ? (
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <RadioButton value="BEFORE" />
+                            <Text>ก่อนเวลาเข้างาน</Text>
+                          </View>
+                        )
+                        : null)
+                      : (
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <RadioButton value="BEFORE" />
+                          <Text>ก่อนเวลาเข้างาน</Text>
+                        </View>
+                      )}
+
+                    {currentDate === section.title
+                      ? (!isNowAfter(item.end)
+                        ? (
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <RadioButton value="AFTER" />
+                            <Text>หลังเวลาเลิกงาน</Text>
+                          </View>
+                        )
+                        : null)
+                      : (
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <RadioButton value="AFTER" />
+                          <Text>หลังเวลาเลิกงาน</Text>
+                        </View>
+                      )}
                   </View>
                 </RadioButton.Group>
                 {
