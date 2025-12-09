@@ -4,14 +4,16 @@ export default ({ config }) => ({
   expo: {
     name: process.env.APP_ENV === 'production' ? 'SesTimeApp' : 'SesTimeApp (DEV)',
     slug: 'SesTimeApp',
-    version: '1.0.0',
+    version: '1.0.1',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
     newArchEnabled: true,
     scheme: "sestimeapp",
     updates: {
-      "enabled": false
+      enabled: true,
+      checkAutomatically: "ON_LOAD",
+      fallbackToCacheTimeout: 0 
     },
     splash: {
       image: './assets/splashx.png',
@@ -31,7 +33,8 @@ export default ({ config }) => ({
       edgeToEdgeEnabled: true,
       permissions: ['CAMERA', 'RECEIVE_BOOT_COMPLETED'],
       package: 'com.siamexpress.timestamp',
-      googleServicesFile: "./android/app/google-services.json"
+      googleServicesFile: process.env.GOOGLE_SERVICES_JSON,
+      versionCode: 2
     },
 
     web: {

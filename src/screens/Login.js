@@ -20,6 +20,7 @@ import { loading, loginUser } from '../services/authSlice';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
+import * as Updates from 'expo-updates';
 import useAllPermissions from '../hooks/useAllPermission';
 
 const inputsConfig = [
@@ -33,12 +34,14 @@ export default function Login({ navigation }) {
   const [token, setToken] = useState('');
   const [form, setForm] = useState({ username: '', password: '' });
   const [errors, setErrors] = useState({ username: '', password: '' });
+  const [version, setVersion] = useState('');
   const { requestAll } = useAllPermissions()
 
 
   useEffect(() => {
     registerForPushNotificationsAsync();
     requestAll();
+    setVersion(Updates.manifest?.version || 'Unknown');
   }, [])
 
   async function registerForPushNotificationsAsync() {
@@ -161,6 +164,7 @@ export default function Login({ navigation }) {
               {isLoading ? 'กรุณารอซักครู่...' : 'เข้าใช้งาน'}
             </Text>
           </Button>
+          <Text>App Version: {version}</Text>
         </ScrollView>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
