@@ -7,6 +7,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "sestimeapp",
+    "jsEngine": "hermes",
+    "updates": {
+      "enabled": false
+    },
     "splash": {
       "image": "./assets/splashx.png",
       "resizeMode": "contain",

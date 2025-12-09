@@ -9,7 +9,10 @@ export default ({ config }) => ({
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
     newArchEnabled: true,
-
+    scheme: "sestimeapp",
+    updates: {
+      "enabled": false
+    },
     splash: {
       image: './assets/splashx.png',
       resizeMode: 'contain',
@@ -28,6 +31,7 @@ export default ({ config }) => ({
       edgeToEdgeEnabled: true,
       permissions: ['CAMERA', 'RECEIVE_BOOT_COMPLETED'],
       package: 'com.siamexpress.timestamp',
+      googleServicesFile: "./android/app/google-services.json"
     },
 
     web: {
