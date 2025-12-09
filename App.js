@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Image, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -6,6 +6,7 @@ import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@rea
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { PaperProvider } from 'react-native-paper';
 import { Provider, useDispatch } from 'react-redux'
+import * as Notifications from 'expo-notifications';
 
 
 import Login from './src/screens/Login';
@@ -27,6 +28,17 @@ import { logoutUser } from './src/services/authSlice';
 import QrScannerScreen from './src/screens/QRScanner';
 import OverTimeAgenda from './src/screens/OverTimeAgenda';
 import OverTimeForm from './src/screens/OverTimeForm';
+
+
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 LocaleConfig.locales['th'] = {
   monthNames: [
@@ -55,11 +67,11 @@ function CustomDrawerContent(props) {
 
   const menuItems = [
     { label: 'Dashboard', icon: 'view-dashboard', route: 'Dashboard', color: '#EB5757' },
-    { label: 'ลงเวลาเข้า-ออกงาน', icon: 'qrcode-scan', route: 'CheckInStack',nested: { screen: 'CheckIn' }, color: '#EB5757' },
+    { label: 'ลงเวลาเข้า-ออกงาน', icon: 'qrcode-scan', route: 'CheckInStack', nested: { screen: 'CheckIn' }, color: '#EB5757' },
     { label: 'ตารางการทำงาน', icon: 'calendar-month', route: 'Agenda', color: '#EB5757' },
     { label: 'การลา', icon: 'briefcase-clock', route: 'LeaveStack', nested: { screen: 'Leave' }, color: '#EB5757' },
-    { label: 'ประวัติการเข้างาน', icon: 'history', route: 'HistoryStack', color: '#EB5757',nested: { screen: 'History' } },
-    { label: 'ประวัติการขอ OT', icon: 'alarm', route: 'OverTimeStack',nested: { screen: 'OverTime' }, color: '#EB5757' },
+    { label: 'ประวัติการเข้างาน', icon: 'history', route: 'HistoryStack', color: '#EB5757', nested: { screen: 'History' } },
+    { label: 'ประวัติการขอ OT', icon: 'alarm', route: 'OverTimeStack', nested: { screen: 'OverTime' }, color: '#EB5757' },
     { label: 'ออกจากระบบ', icon: 'logout', route: 'Login', replace: true, color: '#EB5757' },
   ];
 
@@ -154,11 +166,11 @@ function LeaveStack({ route }) {
 function CheckInStack() {
   return (
     <Stack.Navigator initialRouteName='CheckIn'>
-      <Drawer.Screen 
-        name="CheckIn" 
-        component={CheckIn} 
+      <Drawer.Screen
+        name="CheckIn"
+        component={CheckIn}
         options={{ headerShown: false }} />
-     
+
       <Stack.Screen
         name="QRScanner"
         component={QrScannerScreen}
@@ -227,10 +239,24 @@ function DrawerNavigator() {
 }
 
 export default function App() {
+
+  const navigationRef = useRef();
+
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request?.content?.data;
+      if (data.type === 'before_clock_in' || data.type === 'late_clock_in') {
+        navigationRef.current?.navigate('CheckInStack', { screen: 'CheckIn' });
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
+
   return (
     <Provider store={store}>
       <PaperProvider>
-        <NavigationContainer>
+        <NavigationContainer ref={navigationRef}>
           <Stack.Navigator initialRouteName='Splash' screenOptions={{ headerShown: false }}>
             <Stack.Screen name="Splash" component={SplashScreen} />
             <Stack.Screen name="Login" component={Login} />
