@@ -99,6 +99,6 @@ export default ({ config }) => ({
       appEnv: process.env.APP_ENV,
     },
 
-    owner: 'pimpae',
+    owner: 'bigcats',
   },
 });
