@@ -64,6 +64,16 @@ export function getDateAddDays(days) {
   return date;
 }
 
+export function addDays(dateStr, days = 1) {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + days);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 export function generateThaiMonths() {
   const monthNames = [
     'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
@@ -82,6 +92,14 @@ export function isNowAfter(timeStr) {
   const target = getCurrentDatetime().jsDate;
   const [h, m] = timeStr.split(':').map(Number);
   target.setHours(h, m, 0, 0);
+  return now.getTime() > target.getTime();
+}
+
+export function isNowAfterDateTime(dateStr, timeStr) {
+  const now = getCurrentDatetime().jsDate;
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const [h, m] = timeStr.split(':').map(Number);
+  const target = new Date(year, month - 1, day, h, m, 0, 0);
   return now.getTime() > target.getTime();
 }
 
@@ -106,3 +124,7 @@ export function subtractLeaveFromWork(workStart, workEnd, leaveStart, leaveEnd) 
   return { start: workStart, end: workEnd };
 }
 
+export function toMinutes(time) {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
+}

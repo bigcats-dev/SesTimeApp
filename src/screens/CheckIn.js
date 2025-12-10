@@ -196,7 +196,7 @@ export default function CheckIn({ navigation }) {
           </List.Section>
 
           {/* เมื่อไม่มีตารางงาน */}
-          {(!scheduleData || scheduleData.length) && !isFetching === 0 ? (
+          {(!scheduleData || scheduleData.length == 0) ? (
             <View style={{ marginTop: 20, alignItems: "center" }}>
               <Text>ไม่พบข้อมูลตารางงานวันนี้</Text>
             </View>

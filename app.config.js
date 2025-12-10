@@ -5,6 +5,9 @@ export default ({ config }) => ({
     name: process.env.APP_ENV === 'production' ? 'SesTimeApp' : 'SesTimeApp (DEV)',
     slug: 'SesTimeApp',
     version: '1.0.1',
+    runtimeVersion: {
+      policy: 'appVersion'
+    },
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',

@@ -3,7 +3,7 @@ import React, { useEffect, useCallback, useState } from 'react'
 import AppHeader from '../components/AppHeader'
 import { useLazyGetScheduleQuery } from '../services/schedule'
 import { default as AgendaList } from '../components/AgendaList'
-import { getCurrentDatetime, isNowAfter } from '../utils'
+import { addDays, getCurrentDatetime, isNowAfter, isNowAfterDateTime, toMinutes } from '../utils'
 import { ActivityIndicator } from 'react-native-paper'
 import { default as CardSkeleton } from './../components/skeletions/Leave'
 
@@ -104,11 +104,15 @@ const OverTimeAgenda = ({ navigation }) => {
       console.log('Pressed item:', item);
     }
     const { title } = section;
-    const { end } = item;
+    const { start, end } = item;
     const currentDate = getCurrentDatetime().date;
     if (currentDate <= title) {
-      if (currentDate === title && isNowAfter(end)) return;
-      navigation.navigate('OverTimeForm', { item, section, from: 'stack' });
+      let dateShiftStr = title;
+      if (toMinutes(end) < toMinutes(start)) {
+        dateShiftStr = addDays(title, 1);
+      }
+      if (currentDate === title && isNowAfterDateTime(dateShiftStr, end)) return;
+      navigation.navigate('OverTimeForm', { item, section, dateShiftStr, from: 'stack' });
     }
   }
 

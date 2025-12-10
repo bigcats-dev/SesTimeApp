@@ -40,7 +40,8 @@
       "env": {
         "APP_ENV": "production",
         "API_URL": "https://siamexpresssurvey.com/timestamp"
-      }
+      },
+      "channel": "production"
     },
     "production-apk": {
       "distribution": "store",
@@ -55,7 +56,8 @@
       "env": {
         "APP_ENV": "production",
         "API_URL": "https://siamexpresssurvey.com/timestamp"
-      }
+      },
+      "channel": "production"
     },
     "internal": {
       "distribution": "internal",

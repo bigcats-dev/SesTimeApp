@@ -3,14 +3,14 @@ import React, { useCallback, useState } from 'react'
 import AppHeader from '../components/AppHeader'
 import { Button, Card, Divider, RadioButton, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { getCurrentDatetime, isEmptyString, isNowAfter, toDateThai } from '../utils';
+import { getCurrentDatetime, isEmptyString, isNowAfter, isNowAfterDateTime, toDateThai } from '../utils';
 import Error from '../components/Error';
 import { useCreateOverTimeMutation } from '../services/overTime';
 import styles from '../styles/style';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 const OverTimeForm = ({ navigation, route }) => {
-  const { item, section } = route.params;
+  const { item, section, dateShiftStr } = route.params;
   const [type, setType] = useState('');
   const [reason, setReason] = useState('');
   const [hours, setHours] = useState('');
@@ -130,7 +130,7 @@ const OverTimeForm = ({ navigation, route }) => {
                 >
                   <View style={{ flexDirection: 'column', justifyContent: 'space-around', marginBottom: 8 }}>
                     {currentDate === section.title
-                      ? (!isNowAfter(item.start)
+                      ? (!isNowAfterDateTime(dateShiftStr, item.start)
                         ? (
                           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <RadioButton value="BEFORE" />
@@ -146,7 +146,7 @@ const OverTimeForm = ({ navigation, route }) => {
                       )}
 
                     {currentDate === section.title
-                      ? (!isNowAfter(item.end)
+                      ? (!isNowAfterDateTime(dateShiftStr, item.end)
                         ? (
                           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <RadioButton value="AFTER" />

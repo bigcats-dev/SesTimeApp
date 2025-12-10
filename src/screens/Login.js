@@ -164,7 +164,7 @@ export default function Login({ navigation }) {
               {isLoading ? 'กรุณารอซักครู่...' : 'เข้าใช้งาน'}
             </Text>
           </Button>
-          <Text>App Version: {version}</Text>
+          <Text style={{marginVertical: 20, textAlign: 'center', color: '#5f5e5eff'}}>App Version: {Constants.expoConfig.version}</Text>
         </ScrollView>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>

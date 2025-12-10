@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Image, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -7,6 +7,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { PaperProvider } from 'react-native-paper';
 import { Provider, useDispatch } from 'react-redux'
 import * as Notifications from 'expo-notifications';
+import * as Updates from 'expo-updates';
+import Constants from 'expo-constants';
 
 
 import Login from './src/screens/Login';
@@ -61,11 +63,12 @@ const Drawer = createDrawerNavigator();
 
 function CustomDrawerContent(props) {
   const dispatch = useDispatch();
+  const [version, setVersion] = useState('');
   const { state, navigation } = props;
   const { loading: loadingUser, user } = useAuthStorage();
   const activeRoute = state.routeNames[state.index];
 
-  const menuItems = [
+  const menuItems = useMemo(() => [
     { label: 'Dashboard', icon: 'view-dashboard', route: 'Dashboard', color: '#EB5757' },
     { label: 'ลงเวลาเข้า-ออกงาน', icon: 'qrcode-scan', route: 'CheckInStack', nested: { screen: 'CheckIn' }, color: '#EB5757' },
     { label: 'ตารางการทำงาน', icon: 'calendar-month', route: 'Agenda', color: '#EB5757' },
@@ -73,7 +76,11 @@ function CustomDrawerContent(props) {
     { label: 'ประวัติการเข้างาน', icon: 'history', route: 'HistoryStack', color: '#EB5757', nested: { screen: 'History' } },
     { label: 'ประวัติการขอ OT', icon: 'alarm', route: 'OverTimeStack', nested: { screen: 'OverTime' }, color: '#EB5757' },
     { label: 'ออกจากระบบ', icon: 'logout', route: 'Login', replace: true, color: '#EB5757' },
-  ];
+  ], []);
+
+  useEffect(() => {
+    setVersion(Updates.manifest?.version || 'Unknown');
+  }, [])
 
   return (
     <DrawerContentScrollView style={styles.DrawerContent} {...props}>
@@ -140,6 +147,9 @@ function CustomDrawerContent(props) {
           );
         })
       }
+      <View style={{ alignItems: 'center', marginVertical: 20 }}>
+        <Text style={{color: '#EB5757'}}>App Version: {Constants.expoConfig.version}</Text>
+      </View>
     </DrawerContentScrollView >
   );
 }

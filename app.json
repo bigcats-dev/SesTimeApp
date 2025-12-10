@@ -10,7 +10,10 @@
     "scheme": "sestimeapp",
     "jsEngine": "hermes",
     "updates": {
-      "enabled": false
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/0e1cffb8-b52f-48eb-80e0-801ca52d0a0e"
     },
     "splash": {
       "image": "./assets/splashx.png",
@@ -28,9 +31,18 @@
       "edgeToEdgeEnabled": true,
       "permissions": [
         "CAMERA",
-        "RECEIVE_BOOT_COMPLETED"
+        "RECEIVE_BOOT_COMPLETED",
+        "android.permission.CAMERA",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.pimpae.SesTimeApp"
+      "package": "com.siamexpress.timestamp",
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -71,6 +83,9 @@
         "projectId": "0e1cffb8-b52f-48eb-80e0-801ca52d0a0e"
       }
     },
-    "owner": "pimpae"
+    "owner": "pimpae",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
   }
 }
