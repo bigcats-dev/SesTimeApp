@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { PaperProvider } from 'react-native-paper';
+import { PaperProvider, DefaultTheme } from 'react-native-paper';
 import { Provider, useDispatch } from 'react-redux'
 import * as Notifications from 'expo-notifications';
 import * as Updates from 'expo-updates';
@@ -30,6 +30,7 @@ import { logoutUser } from './src/services/authSlice';
 import QrScannerScreen from './src/screens/QRScanner';
 import OverTimeAgenda from './src/screens/OverTimeAgenda';
 import OverTimeForm from './src/screens/OverTimeForm';
+import { SnackbarProvider } from './src/components/SnackbarContext';
 
 
 
@@ -148,7 +149,7 @@ function CustomDrawerContent(props) {
         })
       }
       <View style={{ alignItems: 'center', marginVertical: 20 }}>
-        <Text style={{color: '#EB5757'}}>App Version: {Constants.expoConfig.version}</Text>
+        <Text style={{ color: '#EB5757' }}>App Version: {Constants.expoConfig.version}</Text>
       </View>
     </DrawerContentScrollView >
   );
@@ -248,6 +249,18 @@ function DrawerNavigator() {
   );
 }
 
+
+const theme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    text: '#000',
+    primary: '#8031f0ff',
+    background: '#ffffff',
+  },
+};
+
+
 export default function App() {
 
   const navigationRef = useRef();
@@ -265,14 +278,16 @@ export default function App() {
 
   return (
     <Provider store={store}>
-      <PaperProvider>
-        <NavigationContainer ref={navigationRef}>
-          <Stack.Navigator initialRouteName='Splash' screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="Splash" component={SplashScreen} />
-            <Stack.Screen name="Login" component={Login} />
-            <Stack.Screen name="MainDrawer" component={DrawerNavigator} />
-          </Stack.Navigator>
-        </NavigationContainer>
+      <PaperProvider theme={theme}>
+        <SnackbarProvider>
+          <NavigationContainer ref={navigationRef}>
+            <Stack.Navigator initialRouteName='Splash' screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="Splash" component={SplashScreen} />
+              <Stack.Screen name="Login" component={Login} />
+              <Stack.Screen name="MainDrawer" component={DrawerNavigator} />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </SnackbarProvider>
       </PaperProvider>
     </Provider>
   );

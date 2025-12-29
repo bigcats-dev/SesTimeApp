@@ -22,7 +22,7 @@ export default function CustomMenu({ anchorText, items, onSelect }) {
           width: '100%'
         }}
       >
-        <Text style={{ fontSize: 16 }}>{anchorText}</Text>
+        <Text style={{ fontSize: 16,color: '#000' }}>{anchorText}</Text>
         <MaterialCommunityIcons name="chevron-down" size={22} color="#ef1b27" />
       </TouchableOpacity>
 

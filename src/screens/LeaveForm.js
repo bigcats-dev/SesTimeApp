@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, View, Platform, KeyboardAvoidingView } from 'react-native';
-import { Appbar, RadioButton, Card, Divider, Checkbox, Text, Button, TextInput } from 'react-native-paper';
+import { Appbar, RadioButton, Card, Divider, Checkbox, Text, Button, TextInput, Snackbar } from 'react-native-paper';
 import * as FileSystem from 'expo-file-system/legacy';
+
 
 import styles from '../styles/style';
 import WorkCalendar from '../components/Calendar';
@@ -14,6 +15,7 @@ import { useGetLeaveTypeQuery } from '../services/master';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Error from '../components/Error';
 import FileAttachment from '../components/FileAttachment';
+import { useSnackbar } from '../components/SnackbarContext';
 
 export default function LeaveForm({ navigation }) {
   const [items, setItems] = useState([]);
@@ -27,6 +29,7 @@ export default function LeaveForm({ navigation }) {
   const { data: leaveTypes } = useGetLeaveTypeQuery();
   const [fetchSchedule, { isFetching }] = useLazyGetScheduleQuery();
   const [createLeave, { isLoading: isCreating }] = useCreateLeaveMutation()
+  const { showSnackbar } = useSnackbar();
 
   useEffect(() => {
     const generateItems = async () => {
@@ -40,7 +43,8 @@ export default function LeaveForm({ navigation }) {
           // 2025-12-09 → รายการของวันก่อนหน้า (shift day) (ไม่ต้องการ)
           return new Date(item.title) >= new Date(startDate);
         });
-        setItems(filtered);
+        console.log('filtered agenda items', JSON.stringify(filtered));
+        setItems(filtered ?? []);
       } catch (error) {
         console.error("Error fetching agenda items:", error);
         setItems([]);
@@ -62,6 +66,13 @@ export default function LeaveForm({ navigation }) {
   };
 
   const handleDayPress = (day) => {
+    const errs = {...errors};
+    if (!type) errs.type = 'กรุณาเลือกประเภทการลา';
+    setErrors(errs);
+    if (hasAnyError(errs)) {
+      showSnackbar('กรุณาเลือกประเภทการลาก่อน', { label: 'ตกลง' });
+      return;
+    }
     const date = day.dateString;
     if (!startDate || (startDate && endDate)) {
       setStartDate(date);
@@ -218,6 +229,8 @@ export default function LeaveForm({ navigation }) {
     setErrors(errors);
     if (!hasAnyError(errors)) {
       setDialogVisible(true);
+    } else {
+      showSnackbar('กรุณาตรวจสอบข้อมูลการลาก่อนส่งคำขอ', { label: 'ตกลง' });
     }
   }
 
@@ -278,7 +291,7 @@ export default function LeaveForm({ navigation }) {
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="always">
           <View style={{ backgroundColor: '#fff', padding: 10 }}>
-            <Text style={{ fontWeight: 'bold' }}>เลือกประเภทการลา</Text>
+            <Text style={{ fontWeight: 'bold', color: '#000' }}>เลือกประเภทการลา</Text>
             <CustomMenu
               anchorText={type?.name ?? 'เลือกประเภทการลา'}
               items={leaveTypes?.data ?? []}
