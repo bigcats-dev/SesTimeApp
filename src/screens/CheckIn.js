@@ -3,7 +3,7 @@ import { View, Image, Text, Modal, StyleSheet, FlatList, ScrollView, TouchableOp
 import { Appbar, Card, Button, ActivityIndicator, TextInput, RadioButton, Divider, TouchableRipple, Checkbox, List } from 'react-native-paper';
 import styles from '../styles/style';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import * as LocalAuthentication from 'expo-local-authentication';
+import { hasHardwareAsync, authenticateAsync, isEnrolledAsync } from 'expo-local-authentication';
 import AppHeader from '../components/AppHeader';
 import { useGetTipsQuery } from '../services/master';
 import { useLazyGetScheduleQuery } from '../services/schedule';
@@ -53,7 +53,7 @@ export default function CheckIn({ navigation }) {
       const errors = {};
       if (!time_work_id?.id) errors.time_work_id = 'กรุณาเลือกกะการทำงาน';
       if (!check_type) errors.check_type = 'กรุณาเลือกช่วงเวลาการลงชื่อ';
-      if (!remark) errors.remark = 'กรุณากรอกหมายเหตุ';
+      if (check_type === 'out' && !isNowAfter(time_work_id.end) && !remark) errors.remark = 'กรุณากรอกหมายเหตุ';
       setErrors(errors);
       if (hasAnyError(errors)) {
         return;
@@ -83,8 +83,8 @@ export default function CheckIn({ navigation }) {
 
   const proceedCheckIn = async () => {
     try {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      const hasHardware = await hasHardwareAsync();
+      const isEnrolled = await isEnrolledAsync();
 
       if (!hasHardware || !isEnrolled) {
         throw new Error(
@@ -92,7 +92,7 @@ export default function CheckIn({ navigation }) {
         );
       }
 
-      const result = await LocalAuthentication.authenticateAsync({
+      const result = await authenticateAsync({
         promptMessage: 'ยืนยันตัวตนด้วยลายนิ้วมือหรือใบหน้า',
         fallbackLabel: 'ใช้รหัสผ่าน',
         cancelLabel: 'ยกเลิก',
@@ -109,6 +109,7 @@ export default function CheckIn({ navigation }) {
         work_date,
       });
     } catch (error) {
+      console.error('Authentication Error:', error);
       Alert.alert('เกิดข้อผิดพลาด', error.message);
     }
   };
