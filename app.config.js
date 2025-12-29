@@ -5,6 +5,9 @@ export default ({ config }) => ({
     name: process.env.APP_ENV === 'production' ? 'SesTimeApp' : 'SesTimeApp (DEV)',
     slug: 'SesTimeApp',
     version: '1.0.1',
+    updates: {
+      url: "https://u.expo.dev/0e1cffb8-b52f-48eb-80e0-801ca52d0a0e"
+    },
     runtimeVersion: {
       policy: 'appVersion'
     },
