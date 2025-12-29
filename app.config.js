@@ -98,8 +98,8 @@ export default ({ config }) => ({
       eas: {
         projectId: '0e1cffb8-b52f-48eb-80e0-801ca52d0a0e',
       },
-      apiUrl: process.env.API_URL,
-      appEnv: process.env.APP_ENV,
+      apiUrl: process.env.API_URL || 'https://siamexpresssurvey.com/timestamp',
+      appEnv: process.env.APP_ENV || 'development',
     },
 
     owner: 'bigcats',

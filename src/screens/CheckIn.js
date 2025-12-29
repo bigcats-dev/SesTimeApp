@@ -3,7 +3,7 @@ import { View, Image, Text, Modal, StyleSheet, FlatList, ScrollView, TouchableOp
 import { Appbar, Card, Button, ActivityIndicator, TextInput, RadioButton, Divider, TouchableRipple, Checkbox, List } from 'react-native-paper';
 import styles from '../styles/style';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { hasHardwareAsync, authenticateAsync, isEnrolledAsync } from 'expo-local-authentication';
+import { hasHardwareAsync, authenticateAsync, isEnrolledAsync, supportedAuthenticationTypesAsync } from 'expo-local-authentication';
 import AppHeader from '../components/AppHeader';
 import { useGetTipsQuery } from '../services/master';
 import { useLazyGetScheduleQuery } from '../services/schedule';
@@ -83,13 +83,14 @@ export default function CheckIn({ navigation }) {
 
   const proceedCheckIn = async () => {
     try {
-      const hasHardware = await hasHardwareAsync();
-      const isEnrolled = await isEnrolledAsync();
-
-      if (!hasHardware || !isEnrolled) {
-        throw new Error(
-          'ไม่พบอุปกรณ์หรือยังไม่ได้ตั้งค่าชีวภาพ\nกรุณาตั้งค่าลายนิ้วมือหรือใบหน้าในอุปกรณ์ของคุณ'
+      const types = await supportedAuthenticationTypesAsync();
+      const isDeviceSecure = types.length > 0;
+      if (!isDeviceSecure) {
+        Alert.alert(
+          'ไม่สามารถใช้งานได้',
+          'อุปกรณ์ของคุณยังไม่ได้ตั้งค่าการล็อกหน้าจอ\nกรุณาไปที่ Settings > Security แล้วตั้ง PIN, Pattern หรือ Password ก่อน'
         );
+        return;
       }
 
       const result = await authenticateAsync({
