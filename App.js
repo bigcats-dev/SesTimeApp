@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Image, Text } from 'react-native';
+import { View, Image, Text, Appearance } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
@@ -255,7 +255,7 @@ const theme = {
   colors: {
     ...DefaultTheme.colors,
     text: '#000',
-    primary: '#8031f0ff',
+    primary: '#7717ffff',
     background: '#ffffff',
   },
 };
@@ -266,6 +266,7 @@ export default function App() {
   const navigationRef = useRef();
 
   useEffect(() => {
+    Appearance.setColorScheme('light');
     const subscription = Notifications.addNotificationResponseReceivedListener(response => {
       const data = response.notification.request?.content?.data;
       if (data.type === 'before_clock_in' || data.type === 'late_clock_in') {

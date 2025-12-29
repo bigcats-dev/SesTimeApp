@@ -59,7 +59,7 @@ export default function CustomMenu({ anchorText, items, onSelect }) {
                     }}
                     style={{ padding: 16 }}
                   >
-                    <Text style={{ fontSize: 16 }}>{name}</Text>
+                    <Text style={{ fontSize: 16, color: '#000' }}>{name}</Text>
                   </TouchableOpacity>
                   {index < items.length - 1 && <Divider />}
                 </React.Fragment>

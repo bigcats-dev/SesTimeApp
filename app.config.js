@@ -34,6 +34,7 @@ export default ({ config }) => ({
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#ffffff',
       },
+      userInterfaceStyle: "light",
       edgeToEdgeEnabled: true,
       permissions: ['CAMERA', 'RECEIVE_BOOT_COMPLETED'],
       package: 'com.siamexpress.timestamp',
