@@ -35,6 +35,7 @@ export default ({ config }) => ({
         backgroundColor: '#ffffff',
       },
       userInterfaceStyle: "light",
+      forceDarkMode: false,
       edgeToEdgeEnabled: true,
       permissions: ['CAMERA', 'RECEIVE_BOOT_COMPLETED'],
       package: 'com.siamexpress.timestamp',
