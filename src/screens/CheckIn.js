@@ -177,6 +177,8 @@ export default function CheckIn({ navigation, route: { params: { workDay } } }) 
   const onRefresh = useCallback(async () => {
     const today = getCurrentDatetime().date;
     console.log("[Refresh] loading schedule for today:", today);
+    setWorkDate('');
+    setTimeWorkId(null);
     await loadSchedule(today);
   }, [])
 
@@ -230,6 +232,7 @@ export default function CheckIn({ navigation, route: { params: { workDay } } }) 
                         </Text>
                         {schedule.data.map((item) => {
                           let newItem = { ...item };
+                          const selected = time_work_id?.id == item.id.toString() && work_date === schedule.title;
                           if (schedule.is_leave) {
                             const leave = schedule.leave_detail?.find(
                               (l) => l.time_work_id === item.id
@@ -269,7 +272,7 @@ export default function CheckIn({ navigation, route: { params: { workDay } } }) 
                             <Card
                               mode="outlined"
                               style={{
-                                borderColor: time_work_id?.id == item.id.toString() ? "#e40909ff" : "#ddd",
+                                borderColor: selected ? "#e40909ff" : "#ddd",
                                 borderRadius: 12,
                               }}
                             >
@@ -290,7 +293,7 @@ export default function CheckIn({ navigation, route: { params: { workDay } } }) 
 
                                 {(!schedule.is_leave || (!('status' in newItem) || (newItem.status === 'leave' && newItem.leave_duration !== 'full'))) && (
                                   <Checkbox
-                                    status={time_work_id?.id == item.id.toString() ? "checked" : "unchecked"}
+                                    status={selected ? "checked" : "unchecked"}
                                   />
                                 )}
 
