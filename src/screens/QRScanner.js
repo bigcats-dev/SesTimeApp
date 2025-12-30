@@ -119,7 +119,7 @@ export default function QrScannerScreen({ navigation, route: { params: { time_wo
         <View style={styles.overlay}>
           <View style={styles.containerCheckin}>
             <MaterialCommunityIcons name="check-circle" size={60} color="#4caf50" />
-            <Text style={styles.textCheckin}>ลงเวลาเข้างานสำเร็จ</Text>
+            <Text style={styles.textCheckin}>ลงเวลา{check_type == 'in' ? 'เข้างาน' : 'ออกงาน'}สำเร็จ</Text>
           </View>
         </View>
       </Modal>

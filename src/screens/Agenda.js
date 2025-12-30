@@ -7,7 +7,7 @@ import { useRoute } from '@react-navigation/native';
 import { useLazyGetScheduleQuery } from '../services/schedule';
 import AppHeader from '../components/AppHeader';
 import { default as LeaveCardSkeleton } from './../components/skeletions/Leave'
-import { getCurrentDatetime } from '../utils';
+import { getCurrentDatetime, getDateMinusDays } from '../utils';
 
 export default function AgendaScreen({ navigation }) {
   const [items, setItems] = useState({ items: [], markedDates: {} });
@@ -119,6 +119,15 @@ export default function AgendaScreen({ navigation }) {
     generateMarkedDates(result, year, month);
   }, [fetchSchedule]);
 
+  const onAgendaItemPress = useCallback((item) => {
+    const today = new Date(getCurrentDatetime().date);
+    const yesterday = getDateMinusDays(1);
+    const itemDate = new Date(item.title);
+    if (itemDate.toDateString() === today.toDateString() || itemDate.toDateString() === yesterday.toDateString()) {
+      navigation.navigate('CheckInStack', { screen: 'CheckIn', params: { workDay: item, from: from } });
+    }
+  }, [fetchSchedule, navigation, from]);
+
   return (
     <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
       {/* Header */}
@@ -129,6 +138,7 @@ export default function AgendaScreen({ navigation }) {
           items={items.items}
           markedDates={items.markedDates}
           onMonthChange={onMonthChange}
+          onAgendaItemPress={onAgendaItemPress}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} />
       )}
     </View>

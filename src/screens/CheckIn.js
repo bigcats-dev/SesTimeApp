@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Image, Text, Modal, StyleSheet, FlatList, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Image, Text, Modal, StyleSheet, FlatList, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
 import { Appbar, Card, Button, ActivityIndicator, TextInput, RadioButton, Divider, TouchableRipple, Checkbox, List } from 'react-native-paper';
 import styles from '../styles/style';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -11,7 +11,7 @@ import { getCurrentDatetime, isEmptyString, isNowAfter, subtractLeaveFromWork, t
 import Error from '../components/Error';
 import { default as CardSkeleton } from './../components/skeletions/History'
 
-export default function CheckIn({ navigation }) {
+export default function CheckIn({ navigation, route: { params: { workDay } } }) {
   const { data, isLoading } = useGetTipsQuery();
   const [fetchSchedule, { isFetching }] = useLazyGetScheduleQuery();
   const [scheduleData, setScheduleData] = useState(null);
@@ -19,26 +19,32 @@ export default function CheckIn({ navigation }) {
   const [check_type, setType] = useState('');
   const [remark, setRemark] = useState('');
   const [time_work_id, setTimeWorkId] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [errors, setErrors] = useState({ time_work_id: '', remark: '', check_type: '' });
 
   useEffect(() => {
-    const startDate = getCurrentDatetime().date;
-    const loadData = async () => {
-      try {
-        const result = await fetchSchedule({ startDate }).unwrap();
-        if (__DEV__) console.log('CheckIn scheduleData:', result);
-        setScheduleData(result);
-        const data = result[0]?.data;
-        if (Array.isArray(data) && data.length == 1) {
-          setWorkDate(result[0]?.title)
-          setTimeWorkId(data[0]);
-        }
-      } catch (error) {
-        console.error('error', error);
+    let startDate = getCurrentDatetime().date;
+    if (workDay) {
+      startDate = workDay.title;
+    }
+    loadSchedule(startDate);
+  }, [workDay, navigation]);
+
+  const loadSchedule = async (date) => {
+    try {
+      const result = await fetchSchedule({ startDate: date }).unwrap();
+      if (__DEV__) console.log("CheckIn scheduleData:", result);
+      setScheduleData(result);
+
+      const data = result[0]?.data;
+      if (Array.isArray(data) && data.length === 1) {
+        setWorkDate(result[0]?.title);
+        setTimeWorkId(data[0]);
       }
-    };
-    loadData();
-  }, []);
+    } catch (error) {
+      console.error("Schedule load error:", error);
+    }
+  };
 
   const hasAnyError = (errors) => {
     if (!errors) return false;
@@ -58,7 +64,9 @@ export default function CheckIn({ navigation }) {
       if (hasAnyError(errors)) {
         return;
       }
-      if (check_type === 'out' && !isNowAfter(time_work_id.end)) {
+      const today = getCurrentDatetime().date;
+      console.log("CheckIn workDate:", work_date, " today:", today);
+      if (check_type === 'out' && !isNowAfter(time_work_id.end) && today === work_date) {
         return Alert.alert(
           'ยืนยันการออกงาน',
           `ยังไม่ถึงเวลาออกงาน\nเวลาออกงานของคุณคือเวลา ${time_work_id.end}\nคุณต้องการออกงานตอนนี้หรือไม่?`,
@@ -166,6 +174,12 @@ export default function CheckIn({ navigation }) {
     }));
   }
 
+  const onRefresh = useCallback(async () => {
+    const today = getCurrentDatetime().date;
+    console.log("[Refresh] loading schedule for today:", today);
+    await loadSchedule(today);
+  }, [])
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -177,6 +191,7 @@ export default function CheckIn({ navigation }) {
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           {/* Tips Section */}
           <Text style={styles.sectionTitle}>คำแนะนำก่อนการลงเวลาเข้างาน</Text>
@@ -196,7 +211,7 @@ export default function CheckIn({ navigation }) {
               </List.Accordion>
             ))}
           </List.Section>
-
+          <Divider style={{ marginVertical: 16 }} />
           {/* เมื่อไม่มีตารางงาน */}
           {(!scheduleData || scheduleData.length == 0) ? (
             <View style={{ marginTop: 20, alignItems: "center" }}>

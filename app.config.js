@@ -4,7 +4,7 @@ export default ({ config }) => ({
   expo: {
     name: process.env.APP_ENV === 'production' ? 'SesTimeApp' : 'SesTimeApp (DEV)',
     slug: 'SesTimeApp',
-    version: '1.0.3',
+    version: '1.0.4',
     runtimeVersion: {
       policy: 'appVersion'
     },
@@ -40,7 +40,7 @@ export default ({ config }) => ({
       permissions: ['CAMERA', 'RECEIVE_BOOT_COMPLETED'],
       package: 'com.siamexpress.timestamp',
       googleServicesFile: process.env.GOOGLE_SERVICES_JSON,
-      versionCode: 2
+      versionCode: 3
     },
 
     web: {
