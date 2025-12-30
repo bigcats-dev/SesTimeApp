@@ -110,11 +110,12 @@ export default function WorkCalendar({ onDayPress, startDate, endDate, minDate }
     const endDate = `${year}-${month.toString().padStart(2, '0')}-${new Date(year, month, 0).getDate()}`;
     const result = await fetchSchedule({ startDate, endDate }).unwrap();
     generateMarkedDates(result, year, month);
-  }, [fetchSchedule]);
+  }, [startDate, endDate]);
 
   return (
     <Calendar
       minDate={minDate}
+      hideExtraDays={true}
       markingType={'period'}
       markedDates={markedDates}
       onMonthChange={onMonthChange}
