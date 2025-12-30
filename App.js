@@ -31,6 +31,7 @@ import QrScannerScreen from './src/screens/QRScanner';
 import OverTimeAgenda from './src/screens/OverTimeAgenda';
 import OverTimeForm from './src/screens/OverTimeForm';
 import { SnackbarProvider } from './src/components/SnackbarContext';
+import { getCurrentDatetime } from './src/utils';
 
 
 
@@ -180,7 +181,8 @@ function CheckInStack() {
       <Drawer.Screen
         name="CheckIn"
         component={CheckIn}
-        options={{ headerShown: false }} />
+        options={{ headerShown: false }}
+        initialParams={{ workDay: {title:getCurrentDatetime().date}}} />
 
       <Stack.Screen
         name="QRScanner"

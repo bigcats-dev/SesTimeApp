@@ -66,7 +66,7 @@ export default function LeaveForm({ navigation }) {
   };
 
   const handleDayPress = (day) => {
-    const errs = {...errors};
+    const errs = { ...errors };
     if (!type) errs.type = 'กรุณาเลือกประเภทการลา';
     setErrors(errs);
     if (hasAnyError(errs)) {
@@ -93,18 +93,79 @@ export default function LeaveForm({ navigation }) {
     const shiftStart = shiftStartHour + shiftStartMin / 60;
     const shiftEnd = shiftEndHour + shiftEndMin / 60;
     if (period === 'morning') return shiftStart < 12;
-    if (period === 'afternoon') return shiftEnd > 12;
-    return true;
+    if (period === 'afternoon') return shiftEnd > 12 && shiftStart < 12;
+    return false;
   }
 
-  const applyHalfDayShift = (shift, type) => {
-    const fullStart = shift.originalStart;
-    const fullEnd = shift.originalEnd;
-    if (fullStart === '08:00' && fullEnd === '17:00') {
-      if (type === 'morning') return { ...shift, start: '08:00', end: '12:00' };
-      if (type === 'afternoon') return { ...shift, start: '13:00', end: '17:00' };
+  const applyHalfDayShift = (shift, half) => {
+    const toMin = (t) => {
+      const [h, m] = t.split(":").map(Number)
+      return h * 60 + m
     }
-    return { ...shift, start: fullStart, end: fullEnd };
+
+    const start = toMin(shift.originalStart)
+    const end = toMin(shift.originalEnd)
+    const noon = toMin("12:00")
+    const aft = toMin("13:00")
+
+    const canMorning = start < noon && end > noon
+    const canAfternoon = start < noon && end > aft
+
+    if (half === "morning" && canMorning) {
+      return { ...shift, start: shift.originalStart, end: "12:00", type: "morning" }
+    }
+
+    if (half === "afternoon" && canAfternoon) {
+      return { ...shift, start: "13:00", end: shift.originalEnd, type: "afternoon" }
+    }
+
+    return { ...shift, start: shift.originalStart, end: shift.originalEnd, type: "full" }
+  }
+
+  const splitHalfShift = (shift, half) => {
+    const toMin = (t) => {
+      const [h, m] = t.split(":").map(Number)
+      return h * 60 + m
+    }
+
+    const toTime = (min) => {
+      min = ((min % 1440) + 1440) % 1440
+      const h = String(Math.floor(min / 60)).padStart(2, "0")
+      const m = String(min % 60).padStart(2, "0")
+      return `${h}:${m}`
+    }
+
+    let startMin = toMin(shift.originalStart)
+    let endMin = toMin(shift.originalEnd)
+
+    if (endMin <= startMin) {
+      endMin += 1440; 
+    }
+
+    const midMin = Math.round(startMin + (endMin - startMin) / 2);
+
+    const firstHalf = {
+      start: toTime(startMin),
+      end: toTime(midMin),
+      originalStart: shift.originalStart,
+      originalEnd: shift.originalEnd
+    }
+    const secondHalf = {
+      start: toTime(midMin),
+      end: toTime(endMin),
+      originalStart: shift.originalStart,
+      originalEnd: shift.originalEnd
+    }
+
+    if (half === "morning") {
+      return { ...shift, ...firstHalf, type: "morning" }
+    }
+
+    if (half === "afternoon") {
+      return { ...shift, ...secondHalf, type: "afternoon" }
+    }
+
+    return shift
   }
 
   const handleLeaveTypeChange = (dayIndex, value) => {
@@ -119,22 +180,22 @@ export default function LeaveForm({ navigation }) {
         if (value === 'full') {
           return { ...shift, start: shift.originalStart, end: shift.originalEnd, selected: true };
         }
-        if (value === 'morning') {
-          if (isShiftInPeriod(shift, 'morning')) {
-            return { ...applyHalfDayShift(shift, 'morning'), selected: true };
-          } else {
-            return { ...shift, selected: false };
-          }
-        }
-        if (value === 'afternoon') {
-          if (isShiftInPeriod(shift, 'afternoon')) {
-            return { ...applyHalfDayShift(shift, 'afternoon'), selected: true };
-          } else {
-            return { ...shift, selected: false };
-          }
-        }
-
-        return shift;
+        return { ...splitHalfShift(shift, value), selected: true };
+        // if (value === 'morning') {
+        //   if (isShiftInPeriod(shift, 'morning')) {
+        //     return { ...applyHalfDayShift(shift, 'morning'), selected: true };
+        //   } else {
+        //     return { ...shift, selected: false };
+        //   }
+        // }
+        // if (value === 'afternoon') {
+        //   if (isShiftInPeriod(shift, 'afternoon')) {
+        //     return { ...applyHalfDayShift(shift, 'afternoon'), selected: true };
+        //   } else {
+        //     return { ...shift, selected: false };
+        //   }
+        // }
+        // return shift;
       });
       daysError[dayIndex] = daysError[dayIndex] || {};
       daysError[dayIndex].leaveType = isEmptyString(value) ? 'กรุณาเลือกช่วงเวลาการลา' : '';

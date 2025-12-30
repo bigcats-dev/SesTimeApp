@@ -355,7 +355,7 @@ export default function CheckIn({ navigation, route: { params: { workDay } } }) 
                     fontSize: 18,
                     textDecorationLine: 'underline',
                   }}
-                  onPress={() => navigation.navigate('History')}
+                  onPress={() => navigation.navigate('HistoryStack', { screen: 'History' })}
                 >
                   ดูประวัติการลงเวลา
                 </Text>
