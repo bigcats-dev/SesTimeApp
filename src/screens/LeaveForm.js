@@ -1,18 +1,21 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, View, Platform, KeyboardAvoidingView, Keyboard, TouchableWithoutFeedback } from 'react-native';
-import { Appbar, RadioButton, Card, Divider, Checkbox, Text, Button, TextInput } from 'react-native-paper';
+import { Alert, ScrollView, View, Platform, KeyboardAvoidingView } from 'react-native';
+import { Appbar, RadioButton, Card, Divider, Checkbox, Text, Button, TextInput, Snackbar } from 'react-native-paper';
+import * as FileSystem from 'expo-file-system/legacy';
+
+
 import styles from '../styles/style';
-import { generateWorkByStartEndDate } from '../mocks/agendaItem';
 import WorkCalendar from '../components/Calendar';
 import { getDateMinusDays, isEmptyString, toDateThai } from '../utils';
 import CustomMenu from '../components/CustomMenu';
-import { useAuthStorage } from '../hooks/useAuthStorage';
-import { useCreateLeaveMutation, useGetLeavesQuery } from '../services/leave';
+import { useCreateLeaveMutation } from '../services/leave';
 import AppHeader from '../components/AppHeader';
 import { useLazyGetScheduleQuery } from '../services/schedule';
 import { useGetLeaveTypeQuery } from '../services/master';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Error from '../components/Error';
+import FileAttachment from '../components/FileAttachment';
+import { useSnackbar } from '../components/SnackbarContext';
 
 export default function LeaveForm({ navigation }) {
   const [items, setItems] = useState([]);
@@ -20,18 +23,28 @@ export default function LeaveForm({ navigation }) {
   const [endDate, setEndDate] = useState('');
   const [type, setType] = useState(null)
   const [reason, setReason] = useState('')
+  const [file, setFile] = useState(null);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [errors, setErrors] = useState({ type: '', reason: '', days: [] });
   const { data: leaveTypes } = useGetLeaveTypeQuery();
   const [fetchSchedule, { isFetching }] = useLazyGetScheduleQuery();
   const [createLeave, { isLoading: isCreating }] = useCreateLeaveMutation()
+  const { showSnackbar } = useSnackbar();
+
   useEffect(() => {
     const generateItems = async () => {
       // fetch API
       if (isEmptyString(startDate)) return;
       try {
         const response = await fetchSchedule({ startDate, endDate }).unwrap();
-        setItems(response);
+        const filtered = response.filter(item => {
+          // ไม่ต้องการวันที่มีกะการทำงานข้ามวัน
+          // 2025-12-10 → กะข้ามวัน (startDate)
+          // 2025-12-09 → รายการของวันก่อนหน้า (shift day) (ไม่ต้องการ)
+          return new Date(item.title) >= new Date(startDate);
+        });
+        console.log('filtered agenda items', JSON.stringify(filtered));
+        setItems(filtered ?? []);
       } catch (error) {
         console.error("Error fetching agenda items:", error);
         setItems([]);
@@ -40,7 +53,26 @@ export default function LeaveForm({ navigation }) {
     generateItems()
   }, [startDate, endDate]);
 
+  const convertToBase64 = async (uri) => {
+    try {
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: 'base64'
+      });
+      return base64;
+    } catch (error) {
+      console.log('convertToBase64 error', error);
+      return null;
+    }
+  };
+
   const handleDayPress = (day) => {
+    const errs = { ...errors };
+    if (!type) errs.type = 'กรุณาเลือกประเภทการลา';
+    setErrors(errs);
+    if (hasAnyError(errs)) {
+      showSnackbar('กรุณาเลือกประเภทการลาก่อน', { label: 'ตกลง' });
+      return;
+    }
     const date = day.dateString;
     if (!startDate || (startDate && endDate)) {
       setStartDate(date);
@@ -61,18 +93,79 @@ export default function LeaveForm({ navigation }) {
     const shiftStart = shiftStartHour + shiftStartMin / 60;
     const shiftEnd = shiftEndHour + shiftEndMin / 60;
     if (period === 'morning') return shiftStart < 12;
-    if (period === 'afternoon') return shiftEnd > 12;
-    return true;
+    if (period === 'afternoon') return shiftEnd > 12 && shiftStart < 12;
+    return false;
   }
 
-  const applyHalfDayShift = (shift, type) => {
-    const fullStart = shift.originalStart;
-    const fullEnd = shift.originalEnd;
-    if (fullStart === '08:00' && fullEnd === '17:00') {
-      if (type === 'morning') return { ...shift, start: '08:00', end: '12:00' };
-      if (type === 'afternoon') return { ...shift, start: '13:00', end: '17:00' };
+  const applyHalfDayShift = (shift, half) => {
+    const toMin = (t) => {
+      const [h, m] = t.split(":").map(Number)
+      return h * 60 + m
     }
-    return { ...shift, start: fullStart, end: fullEnd };
+
+    const start = toMin(shift.originalStart)
+    const end = toMin(shift.originalEnd)
+    const noon = toMin("12:00")
+    const aft = toMin("13:00")
+
+    const canMorning = start < noon && end > noon
+    const canAfternoon = start < noon && end > aft
+
+    if (half === "morning" && canMorning) {
+      return { ...shift, start: shift.originalStart, end: "12:00", type: "morning" }
+    }
+
+    if (half === "afternoon" && canAfternoon) {
+      return { ...shift, start: "13:00", end: shift.originalEnd, type: "afternoon" }
+    }
+
+    return { ...shift, start: shift.originalStart, end: shift.originalEnd, type: "full" }
+  }
+
+  const splitHalfShift = (shift, half) => {
+    const toMin = (t) => {
+      const [h, m] = t.split(":").map(Number)
+      return h * 60 + m
+    }
+
+    const toTime = (min) => {
+      min = ((min % 1440) + 1440) % 1440
+      const h = String(Math.floor(min / 60)).padStart(2, "0")
+      const m = String(min % 60).padStart(2, "0")
+      return `${h}:${m}`
+    }
+
+    let startMin = toMin(shift.originalStart)
+    let endMin = toMin(shift.originalEnd)
+
+    if (endMin <= startMin) {
+      endMin += 1440; 
+    }
+
+    const midMin = Math.round(startMin + (endMin - startMin) / 2);
+
+    const firstHalf = {
+      start: toTime(startMin),
+      end: toTime(midMin),
+      originalStart: shift.originalStart,
+      originalEnd: shift.originalEnd
+    }
+    const secondHalf = {
+      start: toTime(midMin),
+      end: toTime(endMin),
+      originalStart: shift.originalStart,
+      originalEnd: shift.originalEnd
+    }
+
+    if (half === "morning") {
+      return { ...shift, ...firstHalf, type: "morning" }
+    }
+
+    if (half === "afternoon") {
+      return { ...shift, ...secondHalf, type: "afternoon" }
+    }
+
+    return shift
   }
 
   const handleLeaveTypeChange = (dayIndex, value) => {
@@ -87,22 +180,22 @@ export default function LeaveForm({ navigation }) {
         if (value === 'full') {
           return { ...shift, start: shift.originalStart, end: shift.originalEnd, selected: true };
         }
-        if (value === 'morning') {
-          if (isShiftInPeriod(shift, 'morning')) {
-            return { ...applyHalfDayShift(shift, 'morning'), selected: true };
-          } else {
-            return { ...shift, selected: false };
-          }
-        }
-        if (value === 'afternoon') {
-          if (isShiftInPeriod(shift, 'afternoon')) {
-            return { ...applyHalfDayShift(shift, 'afternoon'), selected: true };
-          } else {
-            return { ...shift, selected: false };
-          }
-        }
-
-        return shift;
+        return { ...splitHalfShift(shift, value), selected: true };
+        // if (value === 'morning') {
+        //   if (isShiftInPeriod(shift, 'morning')) {
+        //     return { ...applyHalfDayShift(shift, 'morning'), selected: true };
+        //   } else {
+        //     return { ...shift, selected: false };
+        //   }
+        // }
+        // if (value === 'afternoon') {
+        //   if (isShiftInPeriod(shift, 'afternoon')) {
+        //     return { ...applyHalfDayShift(shift, 'afternoon'), selected: true };
+        //   } else {
+        //     return { ...shift, selected: false };
+        //   }
+        // }
+        // return shift;
       });
       daysError[dayIndex] = daysError[dayIndex] || {};
       daysError[dayIndex].leaveType = isEmptyString(value) ? 'กรุณาเลือกช่วงเวลาการลา' : '';
@@ -141,6 +234,7 @@ export default function LeaveForm({ navigation }) {
           date: day.title,
           type: type,
           leaveDuration: day.leaveType,
+          time_work_id: d.id,
           start: d.start,
           end: d.end
         }))
@@ -154,6 +248,10 @@ export default function LeaveForm({ navigation }) {
 
   const handleSubmit = useCallback(async () => {
     const selectedShifts = prepareLeaveData(items);
+    if (file) {
+      selectedShifts.file_base64 = await convertToBase64(file.uri);
+      selectedShifts.file_ext = getExtension(file.uri);
+    }
     if (selectedShifts.length === 0) {
       Alert.alert('กรุณาเลือกกะที่จะลาอย่างน้อย 1 กะ');
       return;
@@ -165,7 +263,7 @@ export default function LeaveForm({ navigation }) {
       console.error('❌ Error saving leave:', JSON.stringify(error));
       Alert.alert('เกิดข้อผิดพลาดในการบันทึกการลา');
     }
-  }, [type,items,reason]);
+  }, [type, items, reason, file]);
 
   const handleConfirm = () => {
     const errors = {};
@@ -192,6 +290,8 @@ export default function LeaveForm({ navigation }) {
     setErrors(errors);
     if (!hasAnyError(errors)) {
       setDialogVisible(true);
+    } else {
+      showSnackbar('กรุณาตรวจสอบข้อมูลการลาก่อนส่งคำขอ', { label: 'ตกลง' });
     }
   }
 
@@ -226,6 +326,17 @@ export default function LeaveForm({ navigation }) {
     }));
   }
 
+  const onChangeFile = useCallback((files) => {
+    if (__DEV__) {
+      console.log('files attachment', files)
+    }
+    setFile(files[0] ?? [])
+  }, [])
+
+  const getExtension = (uri) => {
+    return uri.split('.').pop().split('?')[0];
+  };
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -241,7 +352,7 @@ export default function LeaveForm({ navigation }) {
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="always">
           <View style={{ backgroundColor: '#fff', padding: 10 }}>
-            <Text style={{ fontWeight: 'bold' }}>เลือกประเภทการลา</Text>
+            <Text style={{ fontWeight: 'bold', color: '#000' }}>เลือกประเภทการลา</Text>
             <CustomMenu
               anchorText={type?.name ?? 'เลือกประเภทการลา'}
               items={leaveTypes?.data ?? []}
@@ -324,6 +435,11 @@ export default function LeaveForm({ navigation }) {
                   onChangeText={onChangeTextReason}
                 />
                 {!isEmptyString(errors.reason) && <Error message={errors.reason} />}
+              </View>
+            )}
+            {items.length > 0 && (
+              <View style={{ marginVertical: 10 }}>
+                <FileAttachment onChange={onChangeFile} multiple={false} />
               </View>
             )}
             {items.length > 0 && (

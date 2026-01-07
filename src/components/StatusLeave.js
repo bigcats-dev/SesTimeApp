@@ -2,22 +2,23 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Chip } from 'react-native-paper';
 
-const StatusLeave = ({ status }) => {
+const StatusLeave = ({ status, width = 140}) => {
   const getStatusProps = (status) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'pending':
         return {
           text: 'รอดำเนินการ',
           color: '#FFA500',
           icon: 'clock-outline'
         };
-      case 'approve':
+      case 'approved':
         return {
           text: 'อนุมัติ',
           color: '#4CAF50',
           icon: 'check-circle-outline'
         };
-      case 'reject':
+      case 'rejected':
+      case 'cancel':
         return {
           text: 'ไม่อนุมัติ',
           color: '#F44336',
@@ -33,7 +34,7 @@ const StatusLeave = ({ status }) => {
   };
   const { text, color, icon } = getStatusProps(status);
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { width: width }]}>
       <Chip
         icon={icon}
         style={{ ...styles.chip, backgroundColor: color + '33' }}
@@ -46,10 +47,10 @@ const StatusLeave = ({ status }) => {
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 4,
+    marginVertical: 1,
   },
   chip: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 1,
   },
 });
 

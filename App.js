@@ -1,11 +1,14 @@
-import React from 'react';
-import { View, Image, Text } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { View, Image, Text, Appearance } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { PaperProvider } from 'react-native-paper';
+import { PaperProvider, DefaultTheme } from 'react-native-paper';
 import { Provider, useDispatch } from 'react-redux'
+import * as Notifications from 'expo-notifications';
+import * as Updates from 'expo-updates';
+import Constants from 'expo-constants';
 
 
 import Login from './src/screens/Login';
@@ -24,6 +27,22 @@ import { LocaleConfig } from 'react-native-calendars';
 import { store } from './store';
 import SplashScreen from './src/screens/SplashScreen';
 import { logoutUser } from './src/services/authSlice';
+import QrScannerScreen from './src/screens/QRScanner';
+import OverTimeAgenda from './src/screens/OverTimeAgenda';
+import OverTimeForm from './src/screens/OverTimeForm';
+import { SnackbarProvider } from './src/components/SnackbarContext';
+import { getCurrentDatetime } from './src/utils';
+
+
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 LocaleConfig.locales['th'] = {
   monthNames: [
@@ -46,19 +65,24 @@ const Drawer = createDrawerNavigator();
 
 function CustomDrawerContent(props) {
   const dispatch = useDispatch();
+  const [version, setVersion] = useState('');
   const { state, navigation } = props;
   const { loading: loadingUser, user } = useAuthStorage();
   const activeRoute = state.routeNames[state.index];
 
-  const menuItems = [
+  const menuItems = useMemo(() => [
     { label: 'Dashboard', icon: 'view-dashboard', route: 'Dashboard', color: '#EB5757' },
-    { label: 'ลงเวลาเข้างาน', icon: 'qrcode-scan', route: 'CheckIn', color: '#EB5757' },
+    { label: 'ลงเวลาเข้า-ออกงาน', icon: 'qrcode-scan', route: 'CheckInStack', nested: { screen: 'CheckIn' }, color: '#EB5757' },
     { label: 'ตารางการทำงาน', icon: 'calendar-month', route: 'Agenda', color: '#EB5757' },
     { label: 'การลา', icon: 'briefcase-clock', route: 'LeaveStack', nested: { screen: 'Leave' }, color: '#EB5757' },
-    { label: 'ประวัติ', icon: 'history', route: 'HistoryStack', color: '#EB5757' },
-    { label: 'โอที', icon: 'alarm', route: 'OverTime', color: '#EB5757' },
+    { label: 'ประวัติการเข้างาน', icon: 'history', route: 'HistoryStack', color: '#EB5757', nested: { screen: 'History' } },
+    { label: 'ประวัติการขอ OT', icon: 'alarm', route: 'OverTimeStack', nested: { screen: 'OverTime' }, color: '#EB5757' },
     { label: 'ออกจากระบบ', icon: 'logout', route: 'Login', replace: true, color: '#EB5757' },
-  ];
+  ], []);
+
+  useEffect(() => {
+    setVersion(Updates.manifest?.version || 'Unknown');
+  }, [])
 
   return (
     <DrawerContentScrollView style={styles.DrawerContent} {...props}>
@@ -125,6 +149,9 @@ function CustomDrawerContent(props) {
           );
         })
       }
+      <View style={{ alignItems: 'center', marginVertical: 20 }}>
+        <Text style={{ color: '#EB5757' }}>App Version: {Constants.expoConfig.version}</Text>
+      </View>
     </DrawerContentScrollView >
   );
 }
@@ -148,6 +175,24 @@ function LeaveStack({ route }) {
   );
 }
 
+function CheckInStack() {
+  return (
+    <Stack.Navigator initialRouteName='CheckIn'>
+      <Drawer.Screen
+        name="CheckIn"
+        component={CheckIn}
+        options={{ headerShown: false }}
+        initialParams={{ workDay: {title:getCurrentDatetime().date}}} />
+
+      <Stack.Screen
+        name="QRScanner"
+        component={QrScannerScreen}
+        options={{ headerShown: false }}
+      />
+    </Stack.Navigator>
+  );
+}
+
 function HistoryStack() {
   return (
     <Stack.Navigator initialRouteName='History'>
@@ -165,6 +210,29 @@ function HistoryStack() {
   );
 }
 
+function OvertTimeStack({ route }) {
+  return (
+    <Stack.Navigator initialRouteName='OverTime'>
+      <Stack.Screen
+        name="OverTime"
+        component={OverTime}
+        options={{ headerShown: false }}
+        initialParams={{ from: route.params?.from || 'drawer' }}
+      />
+      <Stack.Screen
+        name="OverTimeAgenda"
+        component={OverTimeAgenda}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="OverTimeForm"
+        component={OverTimeForm}
+        options={{ headerShown: false }}
+      />
+    </Stack.Navigator>
+  );
+}
+
 
 function DrawerNavigator() {
   return (
@@ -173,27 +241,56 @@ function DrawerNavigator() {
       drawerContent={(props) => <CustomDrawerContent {...props} />}
     >
       <Drawer.Screen name="Dashboard" component={Dashboard} />
-      <Drawer.Screen name="CheckIn" component={CheckIn} />
+      <Drawer.Screen name="CheckInStack" component={CheckInStack} />
       <Drawer.Screen name="Schedule" component={Schedule} />
       <Drawer.Screen name="Agenda" component={Agenda} />
       <Drawer.Screen name="LeaveStack" component={LeaveStack} />
       <Drawer.Screen name="HistoryStack" component={HistoryStack} />
-      <Drawer.Screen name="OverTime" component={OverTime} />
+      <Drawer.Screen name="OverTimeStack" component={OvertTimeStack} />
     </Drawer.Navigator>
   );
 }
 
+
+const theme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    text: '#000',
+    primary: '#7717ffff',
+    background: '#ffffff',
+  },
+};
+
+
 export default function App() {
+
+  const navigationRef = useRef();
+
+  useEffect(() => {
+    Appearance.setColorScheme('light');
+    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request?.content?.data;
+      if (data.type === 'before_clock_in' || data.type === 'late_clock_in') {
+        navigationRef.current?.navigate('CheckInStack', { screen: 'CheckIn' });
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
+
   return (
     <Provider store={store}>
-      <PaperProvider>
-        <NavigationContainer>
-          <Stack.Navigator initialRouteName='Splash' screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="Splash" component={SplashScreen} />
-            <Stack.Screen name="Login" component={Login} />
-            <Stack.Screen name="MainDrawer" component={DrawerNavigator} />
-          </Stack.Navigator>
-        </NavigationContainer>
+      <PaperProvider theme={theme}>
+        <SnackbarProvider>
+          <NavigationContainer ref={navigationRef}>
+            <Stack.Navigator initialRouteName='Splash' screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="Splash" component={SplashScreen} />
+              <Stack.Screen name="Login" component={Login} />
+              <Stack.Screen name="MainDrawer" component={DrawerNavigator} />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </SnackbarProvider>
       </PaperProvider>
     </Provider>
   );

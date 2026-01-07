@@ -1,31 +1,107 @@
-import React, { useState } from 'react';
-import { View, Image, Text, Modal, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
-import { Appbar, Card, Button, ActivityIndicator } from 'react-native-paper';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Image, Text, Modal, StyleSheet, FlatList, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
+import { Appbar, Card, Button, ActivityIndicator, TextInput, RadioButton, Divider, TouchableRipple, Checkbox, List } from 'react-native-paper';
 import styles from '../styles/style';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import useCurrentLocation from '../hooks/useCurrentLocation';
-import * as LocalAuthentication from 'expo-local-authentication';
-import Loading from '../components/Loading';
-import { useRoute } from '@react-navigation/native';
+import { hasHardwareAsync, authenticateAsync, isEnrolledAsync, supportedAuthenticationTypesAsync } from 'expo-local-authentication';
 import AppHeader from '../components/AppHeader';
 import { useGetTipsQuery } from '../services/master';
-import { getCurrentDatetime } from '../utils/day';
+import { useLazyGetScheduleQuery } from '../services/schedule';
+import { getCurrentDatetime, isEmptyString, isNowAfter, subtractLeaveFromWork, toDateThai } from '../utils';
+import Error from '../components/Error';
+import { default as CardSkeleton } from './../components/skeletions/History'
 
-export default function CheckIn({ navigation }) {
-  const { getLocation } = useCurrentLocation();
-  const [loading, setLoading] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const { data, isLoading } = useGetTipsQuery()
+export default function CheckIn({ navigation, route: { params: { workDay } } }) {
+  const { data, isLoading } = useGetTipsQuery();
+  const [fetchSchedule, { isFetching }] = useLazyGetScheduleQuery();
+  const [scheduleData, setScheduleData] = useState(null);
+  const [work_date, setWorkDate] = useState('');
+  const [check_type, setType] = useState('');
+  const [remark, setRemark] = useState('');
+  const [time_work_id, setTimeWorkId] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [errors, setErrors] = useState({ time_work_id: '', remark: '', check_type: '' });
+
+  useEffect(() => {
+    let startDate = getCurrentDatetime().date;
+    if (workDay) {
+      startDate = workDay.title;
+    }
+    loadSchedule(startDate);
+  }, [workDay, navigation]);
+
+  const loadSchedule = async (date) => {
+    try {
+      const result = await fetchSchedule({ startDate: date }).unwrap();
+      if (__DEV__) console.log("CheckIn scheduleData:", result);
+      setScheduleData(result);
+
+      const data = result[0]?.data;
+      if (Array.isArray(data) && data.length === 1) {
+        setWorkDate(result[0]?.title);
+        setTimeWorkId(data[0]);
+      }
+    } catch (error) {
+      console.error("Schedule load error:", error);
+    }
+  };
+
+  const hasAnyError = (errors) => {
+    if (!errors) return false;
+    if (errors.time_work_id && errors.time_work_id.trim() !== '') return true;
+    if (errors.check_type && errors.check_type.trim() !== '') return true;
+    if (errors.remark && errors.remark.trim() !== '') return true;
+    return false;
+  };
+
   const handleCheckIn = async () => {
     try {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      const errors = {};
+      if (!time_work_id?.id) errors.time_work_id = 'กรุณาเลือกกะการทำงาน';
+      if (!check_type) errors.check_type = 'กรุณาเลือกช่วงเวลาการลงชื่อ';
+      if (check_type === 'out' && !isNowAfter(time_work_id.end) && !remark) errors.remark = 'กรุณากรอกหมายเหตุ';
+      setErrors(errors);
+      if (hasAnyError(errors)) {
+        return;
+      }
+      const today = getCurrentDatetime().date;
+      console.log("CheckIn workDate:", work_date, " today:", today);
+      if (check_type === 'out' && !isNowAfter(time_work_id.end) && today === work_date) {
+        return Alert.alert(
+          'ยืนยันการออกงาน',
+          `ยังไม่ถึงเวลาออกงาน\nเวลาออกงานของคุณคือเวลา ${time_work_id.end}\nคุณต้องการออกงานตอนนี้หรือไม่?`,
+          [
+            { text: 'ยกเลิก', style: 'cancel' },
+            {
+              text: 'ยืนยัน',
+              onPress: () => proceedCheckIn(),
+            },
+          ]
+        );
+      }
+      proceedCheckIn();
+    } catch (error) {
+      console.error('Check-in Error:', error);
+      Alert.alert(
+        'เกิดข้อผิดพลาด',
+        error.message || 'เกิดข้อผิดพลาดไม่ทราบสาเหตุ'
+      );
+    }
+  };
 
-      if (!hasHardware || !isEnrolled) {
-        throw new Error('ไม่พบอุปกรณ์หรือยังไม่ได้ตั้งค่าชีวภาพ\nกรุณาตั้งค่าลายนิ้วมือหรือใบหน้าในอุปกรณ์ของคุณ');
+  const proceedCheckIn = async () => {
+    try {
+      const types = await supportedAuthenticationTypesAsync();
+      const isDeviceSecure = types.length > 0;
+      if (!isDeviceSecure) {
+        Alert.alert(
+          'ไม่สามารถใช้งานได้',
+          'อุปกรณ์ของคุณยังไม่ได้ตั้งค่าการล็อกหน้าจอ\nกรุณาไปที่ Settings > Security แล้วตั้ง PIN, Pattern หรือ Password ก่อน'
+        );
+        return;
       }
 
-      const result = await LocalAuthentication.authenticateAsync({
+      const result = await authenticateAsync({
         promptMessage: 'ยืนยันตัวตนด้วยลายนิ้วมือหรือใบหน้า',
         fallbackLabel: 'ใช้รหัสผ่าน',
         cancelLabel: 'ยกเลิก',
@@ -35,43 +111,15 @@ export default function CheckIn({ navigation }) {
         throw new Error('ยืนยันตัวตนไม่สำเร็จ\nกรุณาลองใหม่อีกครั้ง');
       }
 
-      setLoading(true);
-
-      const loc = await getLocation();
-      if (!loc) {
-        throw new Error('ไม่สามารถดึงตำแหน่งได้');
-      }
-
-      const payload = {
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-        datetime: getCurrentDatetime(),
-      };
-
-      // const response = await fetch('https://your-api-endpoint.com/checkin', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(payload),
-      // });
-
-      // if (!response.ok) {
-      //   throw new Error('ไม่สามารถส่งข้อมูลลงเวลาได้');
-      // }
-
-      // const data = await response.json();
-      // console.log('Check-in response:', data);
-      setModalVisible(true);
-      setTimeout(() => {
-        setModalVisible(false)
-      }, 1000);
+      navigation.navigate('QRScanner', {
+        time_work_id,
+        check_type,
+        remark,
+        work_date,
+      });
     } catch (error) {
-      console.error('Check-in Error:', error);
-      Alert.alert(
-        'เกิดข้อผิดพลาด',
-        error.message || 'เกิดข้อผิดพลาดไม่ทราบสาเหตุ'
-      );
-    } finally {
-      setLoading(false);
+      console.error('Authentication Error:', error);
+      Alert.alert('เกิดข้อผิดพลาด', error.message);
     }
   };
 
@@ -98,64 +146,225 @@ export default function CheckIn({ navigation }) {
     </TouchableOpacity>
   );
 
+  const onSetTimeValue = (date, value) => {
+    setWorkDate(date)
+    setTimeWorkId(value);
+    setErrors((prev) => ({
+      ...prev, time_work_id: isEmptyString(value)
+        ? 'กรุณาเลือกกะการทำงาน'
+        : ''
+    }));
+  }
+
+  const onTypeChange = (value) => {
+    setType(value);
+    setErrors((prev) => ({
+      ...prev, check_type: isEmptyString(value)
+        ? 'กรุณาเลือกช่วงเวลา'
+        : ''
+    }));
+  }
+
+  const onChangeTextRemark = (text) => {
+    setRemark(text)
+    setErrors((prev) => ({
+      ...prev, remark: isEmptyString(text)
+        ? 'กรุณากรอกหมายเหตุ'
+        : ''
+    }));
+  }
+
+  const onRefresh = useCallback(async () => {
+    const today = getCurrentDatetime().date;
+    console.log("[Refresh] loading schedule for today:", today);
+    setWorkDate('');
+    setTimeWorkId(null);
+    await loadSchedule(today);
+  }, [])
+
   return (
-    <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-      {/* Header */}
-      <AppHeader title={'ลงเวลาเข้างาน'} />
-      <View style={{ flex: 1, paddingHorizontal: 16, marginTop: 10 }}>
-        <Text style={styles.sectionTitle}>คำแนะนำก่อนการลงเวลาเข้างาน</Text>
-        {isLoading && <ActivityIndicator />}
-        <FlatList
-          data={data?.data}
-          keyExtractor={(i) => i.id}
-          renderItem={renderTip}
-          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-          contentContainerStyle={{ paddingBottom: 16 }}
-        />
-      </View>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+        {/* Header */}
+        <AppHeader title={'ลงเวลาเข้า-ออกงาน'} />
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        >
+          {/* Tips Section */}
+          <Text style={styles.sectionTitle}>คำแนะนำก่อนการลงเวลาเข้างาน</Text>
 
-      <View style={{ alignItems: 'center', marginBottom: 40 }}>
-        <Button
-          mode="contained"
-          style={styles.buttonCheck}
-          labelStyle={styles.labelStyleCheck}
-          icon={() => (
-            <MaterialCommunityIcons name="qrcode-scan" size={20} color="#fff" />
+          {isLoading && isFetching && [...Array(5)].map((_, i) => <CardSkeleton key={i} />)}
+
+          <List.Section>
+            {data?.data?.map((i) => (
+              <List.Accordion
+                key={i.id}
+                title={i.title || `Tip ${i.id}`}
+                titleStyle={{ fontWeight: 'bold' }}
+              >
+                <View style={{ paddingHorizontal: 2, paddingVertical: 8 }}>
+                  {renderTip({ item: i })}
+                </View>
+              </List.Accordion>
+            ))}
+          </List.Section>
+          <Divider style={{ marginVertical: 16 }} />
+          {/* เมื่อไม่มีตารางงาน */}
+          {(!scheduleData || scheduleData.length == 0) ? (
+            <View style={{ marginTop: 20, alignItems: "center" }}>
+              <Text>ไม่พบข้อมูลตารางงานวันนี้</Text>
+            </View>
+          ) : (
+            <>
+              {/* Work Schedule + Form */}
+              <View style={{ marginTop: 20 }}>
+                <Card style={{ marginBottom: 16 }}>
+                  <Card.Content>
+                    {scheduleData?.map((schedule) => (
+                      <View key={schedule.title}>
+                        <Text style={{ fontWeight: 'bold', marginVertical: 1 }}>
+                          วันที่ {toDateThai(schedule.title)}
+                        </Text>
+                        {schedule.data.map((item) => {
+                          let newItem = { ...item };
+                          const selected = time_work_id?.id == item.id.toString() && work_date === schedule.title;
+                          if (schedule.is_leave) {
+                            const leave = schedule.leave_detail?.find(
+                              (l) => l.time_work_id === item.id
+                            );
+
+                            if (leave) {
+                              const result = subtractLeaveFromWork(
+                                item.start,
+                                item.end,
+                                leave.start_time,
+                                leave.end_time
+                              );
+                              newItem = {
+                                ...newItem,
+                                start: result.start,
+                                end: result.end,
+                                status: 'leave',
+                                remark: leave.remark,
+                                leave_type: leave.leave_type,
+                                leave_duration: leave.leave_duration,
+                              };
+                            }
+                          }
+                          return (<TouchableRipple
+                            key={item.id}
+                            onPress={() => {
+                              if (!schedule.is_leave
+                                || (
+                                  !('status' in newItem)
+                                  || (newItem.status === 'leave' && newItem.leave_duration !== 'full'))) {
+                                onSetTimeValue(schedule.title, item)
+                              }
+
+                            }}
+                            style={{ marginBottom: 8 }}
+                          >
+                            <Card
+                              mode="outlined"
+                              style={{
+                                borderColor: selected ? "#e40909ff" : "#ddd",
+                                borderRadius: 12,
+                              }}
+                            >
+                              <Card.Content
+                                style={{
+                                  flexDirection: "row",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <Text variant="titleMedium">
+                                  {newItem.start} - {newItem.end}
+                                </Text>
+
+                                {newItem.status === 'leave' && newItem.leave_duration === 'full' && (
+                                  <Text style={{ color: 'red' }}>{newItem.leave_type}</Text>
+                                )}
+
+                                {(!schedule.is_leave || (!('status' in newItem) || (newItem.status === 'leave' && newItem.leave_duration !== 'full'))) && (
+                                  <Checkbox
+                                    status={selected ? "checked" : "unchecked"}
+                                  />
+                                )}
+
+                              </Card.Content>
+                            </Card>
+                          </TouchableRipple>)
+                        })}
+                      </View>
+                    ))}
+                    {isEmptyString(time_work_id?.id) && <Error message={errors.time_work_id} />}
+                  </Card.Content>
+                </Card>
+                {/* เลือกช่วงเวลา */}
+                <Card>
+                  <Card.Content>
+                    <Text style={{ marginBottom: 4, fontWeight: 'bold' }}>เลือกช่วงเวลาการลงชื่อ</Text>
+                    <RadioButton.Group onValueChange={onTypeChange} value={check_type}>
+                      <View style={{ flexDirection: 'column', marginBottom: 8 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <RadioButton value="in" />
+                          <Text>เข้างาน</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <RadioButton value="out" />
+                          <Text>ออกงาน</Text>
+                        </View>
+                      </View>
+                    </RadioButton.Group>
+                    {isEmptyString(check_type) && <Error message={errors.check_type} />}
+                    <TextInput
+                      style={{ marginVertical: 3 }}
+                      label="หมายเหตุ"
+                      value={remark}
+                      onChangeText={onChangeTextRemark}
+                    />
+                    {isEmptyString(remark) && <Error message={errors.remark} />}
+                  </Card.Content>
+                </Card>
+              </View>
+
+              {/* ปุ่ม */}
+              <View style={{ alignItems: 'center', marginTop: 20 }}>
+                <Button
+                  mode="contained"
+                  style={styles.buttonCheck}
+                  labelStyle={styles.labelStyleCheck}
+                  icon={() => (
+                    <MaterialCommunityIcons name="qrcode-scan" size={20} color="#fff" />
+                  )}
+                  onPress={handleCheckIn}
+                >
+                  ยืนยันลงเวลา
+                </Button>
+
+                <Text
+                  style={{
+                    marginTop: 5,
+                    color: '#0072ff',
+                    fontSize: 18,
+                    textDecorationLine: 'underline',
+                  }}
+                  onPress={() => navigation.navigate('HistoryStack', { screen: 'History' })}
+                >
+                  ดูประวัติการลงเวลา
+                </Text>
+              </View>
+            </>
           )}
-          onPress={handleCheckIn}
-        >
-          ยืนยันลงเวลา
-        </Button>
-
-        <Text
-          style={{
-            marginTop: 5,
-            color: '#0072ff',
-            fontSize: 18,
-            textDecorationLine: 'underline',
-          }}
-          onPress={() => navigation.navigate('History')}
-        >
-          ดูประวัติการลงเวลา
-        </Text>
+        </ScrollView>
       </View>
-
-
-      <Modal
-        transparent
-        visible={modalVisible}
-        animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.overlay}>
-          <View style={styles.containerCheckin}>
-            <MaterialCommunityIcons name="check-circle" size={60} color="#4caf50" />
-            <Text style={styles.textCheckin}>ลงเวลาเข้างานสำเร็จ</Text>
-          </View>
-        </View>
-      </Modal>
-      <Loading visible={loading} />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

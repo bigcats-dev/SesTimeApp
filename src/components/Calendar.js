@@ -4,14 +4,12 @@ import { generateWorkDays } from '../mocks/agendaItem';
 import { Image } from 'react-native';
 import { useLazyGetScheduleQuery } from '../services/schedule';
 
-export default function WorkCalendar({ onDayPress, startDate, endDate , minDate}) {
+export default function WorkCalendar({ onDayPress, startDate, endDate, minDate }) {
   const [markedDates, setMarkedDates] = useState({});
   const [fetchSchedule, { isFetching }] = useLazyGetScheduleQuery()
 
   const generateMarkedDates = async (result, year, month) => {
     try {
-      const leaveDays = [];
-      const holidays = [];
       const workDays = result.map(day => ({ ...day }));
       const daysInMonth = new Date(year, month, 0).getDate();
       const newMarkedDates = {};
@@ -20,9 +18,8 @@ export default function WorkCalendar({ onDayPress, startDate, endDate , minDate}
         const dayStr = `${year}-${month.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
         const isWorkDay = workDays.some(d => d.title == dayStr);
         const isLeaveDay = workDays.some(d => d.title == dayStr && d.is_leave === true);
-        const isHoliday = holidays.includes(dayStr);
         const isPast = dayStr < minDate;
-        const disabled = !isWorkDay || isPast || isLeaveDay;
+        const disabled = isPast ? true :  (!isWorkDay || isLeaveDay);
         newMarkedDates[dayStr] = {
           marked: isWorkDay,
           dotColor: isLeaveDay ? 'red' : 'blue',
@@ -71,7 +68,41 @@ export default function WorkCalendar({ onDayPress, startDate, endDate , minDate}
       }
     };
     loadData();
-  }, [startDate, endDate, minDate]);
+  }, [minDate]);
+
+  useEffect(() => {
+    const newMarkedDates = { ...markedDates };
+    if (Object.keys(newMarkedDates).length > 0 && startDate) {
+      Object.keys(newMarkedDates).forEach(d => {
+        newMarkedDates[d] = { ...newMarkedDates[d] };
+        delete newMarkedDates[d].startingDay;
+        delete newMarkedDates[d].endingDay;
+        delete newMarkedDates[d].color;
+        if (!newMarkedDates[d].disabled)
+          newMarkedDates[d].textColor = '#000';
+      });
+      const start = new Date(startDate);
+      const end = endDate ? new Date(endDate) : start;
+      let current = new Date(start);
+
+      while (current <= end) {
+        const d = current.toISOString().split('T')[0];
+        const isStart = d === startDate;
+        const isEnd = d === (endDate || startDate);
+
+        newMarkedDates[d] = {
+          ...(newMarkedDates[d] || {}),
+          startingDay: isStart,
+          endingDay: isEnd,
+          color: '#ff7f50',
+          textColor: '#fff'
+        };
+
+        current.setDate(current.getDate() + 1);
+      }
+    }
+    setMarkedDates(newMarkedDates);
+  }, [startDate, endDate]);
 
   const onMonthChange = useCallback(async (value) => {
     const [year, month] = [value.year, value.month]
@@ -79,11 +110,12 @@ export default function WorkCalendar({ onDayPress, startDate, endDate , minDate}
     const endDate = `${year}-${month.toString().padStart(2, '0')}-${new Date(year, month, 0).getDate()}`;
     const result = await fetchSchedule({ startDate, endDate }).unwrap();
     generateMarkedDates(result, year, month);
-  }, [fetchSchedule]);
+  }, [startDate, endDate]);
 
   return (
     <Calendar
       minDate={minDate}
+      hideExtraDays={true}
       markingType={'period'}
       markedDates={markedDates}
       onMonthChange={onMonthChange}
