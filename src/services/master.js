@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 const masterApi = createApi({
   reducerPath: 'masterApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.API_BASE_URL || 'http://192.168.1.100:10601/api/master',
+    baseUrl: process.env.API_BASE_URL || 'http://192.168.150.23:10601/api/master',
   }),
   tagTypes: ['MasterTip', 'MasterLeave'],
   endpoints: (builder) => ({
