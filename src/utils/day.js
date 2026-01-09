@@ -103,6 +103,15 @@ export function isNowAfterDateTime(dateStr, timeStr) {
   return now.getTime() > target.getTime();
 }
 
+export function isWithinDuration(targetTime, durationHours) {
+  const target = targetTime instanceof Date ? targetTime : new Date(targetTime);
+  const now = new Date();
+  const diffMs = target - now;
+  const diffHours = diffMs / (1000 * 60 * 60);
+  return diffHours <= durationHours;
+}
+
+
 export function subtractLeaveFromWork(workStart, workEnd, leaveStart, leaveEnd) {
   const toMinutes = (t) => {
     const [h, m] = t.split(':').map(Number);

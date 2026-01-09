@@ -10,6 +10,7 @@ import { useLazyGetScheduleQuery } from '../services/schedule';
 import { getCurrentDatetime, isEmptyString, isNowAfter, subtractLeaveFromWork, toDateThai } from '../utils';
 import Error from '../components/Error';
 import { default as CardSkeleton } from './../components/skeletions/History'
+import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
 
 export default function CheckIn({ navigation, route: { params: { workDay } } }) {
   const { data, isLoading } = useGetTipsQuery();
@@ -36,11 +37,11 @@ export default function CheckIn({ navigation, route: { params: { workDay } } }) 
       if (__DEV__) console.log("CheckIn scheduleData:", result);
       setScheduleData(result);
 
-      const data = result[0]?.data;
-      if (Array.isArray(data) && data.length === 1) {
-        setWorkDate(result[0]?.title);
-        setTimeWorkId(data[0]);
-      }
+      // const data = result[0]?.data;
+      // if (Array.isArray(data) && data.length === 1) {
+      //   setWorkDate(result[0]?.title);
+      //   setTimeWorkId(data[0]);
+      // }
     } catch (error) {
       console.error("Schedule load error:", error);
     }
@@ -182,6 +183,48 @@ export default function CheckIn({ navigation, route: { params: { workDay } } }) 
     await loadSchedule(today);
   }, [])
 
+  const checkShiftDisplay = (day, shifts, bufferBefore = 2, bufferAfter = 2) => {
+    const current = getCurrentDatetime().jsDate;
+
+    function parseTime(timeStr) {
+      const [h, m] = timeStr.split(":").map(Number);
+      const d = new Date(day);
+      d.setHours(h, m, 0, 0);
+      return d;
+    }
+
+    const results = shifts.map(shift => {
+      let start = parseTime(shift.start);
+      let end = parseTime(shift.end);
+
+      if (end <= start) {
+        end.setDate(end.getDate() + 1);
+      }
+      if (shift.overtime && Array.isArray(shift.overtime)) {
+        shift.overtime.forEach(ot => {
+          if (ot.type === "BEFORE") {
+            start = parseTime(ot.start_time);
+          }
+          if (ot.type === "AFTER") {
+            end = parseTime(ot.end_time);
+            if (end <= start) {
+              end.setDate(end.getDate() + 1);
+            }
+          }
+        });
+      }
+      const startWithBuffer = new Date(start.getTime() - bufferBefore * 60 * 60 * 1000);
+      const endWithBuffer = new Date(end.getTime() + bufferAfter * 60 * 60 * 1000);
+      const active = current >= startWithBuffer && current <= endWithBuffer;
+      return { id: shift.id, active, startWithBuffer, endWithBuffer };
+
+    });
+    const shouldDisplayDay = results.some(r => r.active);
+    return { results, shouldDisplayDay };
+  }
+
+
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -225,84 +268,97 @@ export default function CheckIn({ navigation, route: { params: { workDay } } }) 
               <View style={{ marginTop: 20 }}>
                 <Card style={{ marginBottom: 16 }}>
                   <Card.Content>
-                    {scheduleData?.map((schedule) => (
-                      <View key={schedule.title}>
-                        <Text style={{ fontWeight: 'bold', marginVertical: 1 }}>
-                          วันที่ {toDateThai(schedule.title)}
-                        </Text>
-                        {schedule.data.map((item) => {
-                          let newItem = { ...item };
-                          const selected = time_work_id?.id == item.id.toString() && work_date === schedule.title;
-                          if (schedule.is_leave) {
-                            const leave = schedule.leave_detail?.find(
-                              (l) => l.time_work_id === item.id
-                            );
-
-                            if (leave) {
-                              const result = subtractLeaveFromWork(
-                                item.start,
-                                item.end,
-                                leave.start_time,
-                                leave.end_time
-                              );
-                              newItem = {
-                                ...newItem,
-                                start: result.start,
-                                end: result.end,
-                                status: 'leave',
-                                remark: leave.remark,
-                                leave_type: leave.leave_type,
-                                leave_duration: leave.leave_duration,
-                              };
+                    {scheduleData?.map((schedule) => {
+                      const { shouldDisplayDay, results } = checkShiftDisplay(
+                        schedule.title,
+                        schedule.data, 3, 3
+                      );
+                      if (!shouldDisplayDay) {
+                        return null;
+                      }
+                      return (
+                        <View key={schedule.title}>
+                          <Text style={{ fontWeight: 'bold', marginVertical: 1 }}>
+                            วันที่ {toDateThai(schedule.title)}
+                          </Text>
+                          {schedule.data.map((item) => {
+                            const { active } = results.find(r => r.id === item.id) || {};
+                            if (!active) {
+                              return null;
                             }
-                          }
-                          return (<TouchableRipple
-                            key={item.id}
-                            onPress={() => {
-                              if (!schedule.is_leave
-                                || (
-                                  !('status' in newItem)
-                                  || (newItem.status === 'leave' && newItem.leave_duration !== 'full'))) {
-                                onSetTimeValue(schedule.title, item)
-                              }
+                            let newItem = { ...item };
+                            const selected = time_work_id?.id == item.id.toString() && work_date === schedule.title;
+                            if (schedule.is_leave) {
+                              const leave = schedule.leave_detail?.find(
+                                (l) => l.time_work_id === item.id
+                              );
 
-                            }}
-                            style={{ marginBottom: 8 }}
-                          >
-                            <Card
-                              mode="outlined"
-                              style={{
-                                borderColor: selected ? "#e40909ff" : "#ddd",
-                                borderRadius: 12,
+                              if (leave) {
+                                const result = subtractLeaveFromWork(
+                                  item.start,
+                                  item.end,
+                                  leave.start_time,
+                                  leave.end_time
+                                );
+                                newItem = {
+                                  ...newItem,
+                                  start: result.start,
+                                  end: result.end,
+                                  status: 'leave',
+                                  remark: leave.remark,
+                                  leave_type: leave.leave_type,
+                                  leave_duration: leave.leave_duration,
+                                };
+                              }
+                            }
+                            return (<TouchableRipple
+                              key={item.id}
+                              onPress={() => {
+                                if (!schedule.is_leave
+                                  || (
+                                    !('status' in newItem)
+                                    || (newItem.status === 'leave' && newItem.leave_duration !== 'full'))) {
+                                  onSetTimeValue(schedule.title, item)
+                                }
+
                               }}
+                              style={{ marginBottom: 8 }}
                             >
-                              <Card.Content
+                              <Card
+                                mode="outlined"
                                 style={{
-                                  flexDirection: "row",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
+                                  borderColor: selected ? "#e40909ff" : "#ddd",
+                                  borderRadius: 12,
                                 }}
                               >
-                                <Text variant="titleMedium">
-                                  {newItem.start} - {newItem.end}
-                                </Text>
+                                <Card.Content
+                                  style={{
+                                    flexDirection: "row",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <Text variant="titleMedium">
+                                    {newItem.start} - {newItem.end}
+                                  </Text>
 
-                                {newItem.status === 'leave' && newItem.leave_duration === 'full' && (
-                                  <Text style={{ color: 'red' }}>{newItem.leave_type}</Text>
-                                )}
+                                  {newItem.status === 'leave' && newItem.leave_duration === 'full' && (
+                                    <Text style={{ color: 'red' }}>{newItem.leave_type}</Text>
+                                  )}
 
-                                {(!schedule.is_leave || (!('status' in newItem) || (newItem.status === 'leave' && newItem.leave_duration !== 'full'))) && (
-                                  <Checkbox
-                                    status={selected ? "checked" : "unchecked"}
-                                  />
-                                )}
+                                  {(!schedule.is_leave || (!('status' in newItem) || (newItem.status === 'leave' && newItem.leave_duration !== 'full'))) && (
+                                    <Checkbox
+                                      status={selected ? "checked" : "unchecked"}
+                                    />
+                                  )}
 
-                              </Card.Content>
-                            </Card>
-                          </TouchableRipple>)
-                        })}
-                      </View>
-                    ))}
+                                </Card.Content>
+                              </Card>
+                            </TouchableRipple>)
+                          })}
+                        </View>
+                      )
+                    })}
                     {isEmptyString(time_work_id?.id) && <Error message={errors.time_work_id} />}
                   </Card.Content>
                 </Card>
