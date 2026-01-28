@@ -183,9 +183,9 @@ export default function CheckIn({ navigation, route: { params: { workDay } } }) 
     await loadSchedule(today);
   }, [])
 
-  const checkShiftDisplay = (day, shifts, bufferBefore = 2, bufferAfter = 2) => {
+  const checkShiftDisplay = (day, shifts, bufferBefore = 3, bufferAfter = 3) => {
     const current = getCurrentDatetime().jsDate;
-
+    // const current = new Date(2026,0,27,8,15,0)
     function parseTime(timeStr) {
       const [h, m] = timeStr.split(":").map(Number);
       const d = new Date(day);
@@ -216,6 +216,9 @@ export default function CheckIn({ navigation, route: { params: { workDay } } }) 
       const startWithBuffer = new Date(start.getTime() - bufferBefore * 60 * 60 * 1000);
       const endWithBuffer = new Date(end.getTime() + bufferAfter * 60 * 60 * 1000);
       const active = current >= startWithBuffer && current <= endWithBuffer;
+      if (__DEV__) {
+        console.log(`Shift ID: ${shift.id} | Start: ${shift.start} | End: ${shift.end} | StartWithBuffer: ${startWithBuffer} | EndWithBuffer: ${endWithBuffer} | Active: ${active} | Current: ${current}`);
+      }
       return { id: shift.id, active, startWithBuffer, endWithBuffer };
 
     });
@@ -271,11 +274,11 @@ export default function CheckIn({ navigation, route: { params: { workDay } } }) 
                     {scheduleData?.map((schedule) => {
                       const { shouldDisplayDay, results } = checkShiftDisplay(
                         schedule.title,
-                        schedule.data, 3, 3
+                        schedule.data, 3, 4
                       );
-                      if (!shouldDisplayDay) {
-                        return null;
-                      }
+                      // if (!shouldDisplayDay) {
+                      //   return null;
+                      // }
                       return (
                         <View key={schedule.title}>
                           <Text style={{ fontWeight: 'bold', marginVertical: 1 }}>
@@ -283,9 +286,9 @@ export default function CheckIn({ navigation, route: { params: { workDay } } }) 
                           </Text>
                           {schedule.data.map((item) => {
                             const { active } = results.find(r => r.id === item.id) || {};
-                            if (!active) {
-                              return null;
-                            }
+                            // if (!active) {
+                            //   return null;
+                            // }
                             let newItem = { ...item };
                             const selected = time_work_id?.id == item.id.toString() && work_date === schedule.title;
                             if (schedule.is_leave) {
@@ -313,6 +316,7 @@ export default function CheckIn({ navigation, route: { params: { workDay } } }) 
                             }
                             return (<TouchableRipple
                               key={item.id}
+                              disabled={!active}
                               onPress={() => {
                                 if (!schedule.is_leave
                                   || (
@@ -349,6 +353,7 @@ export default function CheckIn({ navigation, route: { params: { workDay } } }) 
                                   {(!schedule.is_leave || (!('status' in newItem) || (newItem.status === 'leave' && newItem.leave_duration !== 'full'))) && (
                                     <Checkbox
                                       status={selected ? "checked" : "unchecked"}
+                                      disabled={active ? false : true}
                                     />
                                   )}
 
